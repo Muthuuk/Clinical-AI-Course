@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Ward Round</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a ward-round workbook. Left rail lists the stations (a real sequence), main column holds one station at a time:
+   plain-words brief -> live simulation -> check question -> bedside takeaway. */
+:root{
+  --bg:#F3F6F6; --surface:#FFFFFF; --surface-2:#E9EFEF; --ink:#14232A; --muted:#55686D; --line:#D2DCDD;
+  --accent:#0E6B66; --accent-soft:#D6ECEA; --signal:#B97A06; --signal-soft:#F7EBD2;
+  --good:#2C7A4B; --good-soft:#DCEFE3; --bad:#AE3434; --bad-soft:#F6DEDE; --info:#2D5B8A;
+  --img-bg:#0B0F10;
+  --f-display:"Newsreader", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --info:#7FA9D8; --img-bg:#050708;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --info:#7FA9D8; --img-bg:#050708;
+  color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.55}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:1240px;margin:0 auto;padding:10px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand h1{font-size:1.45rem}
+.brand span{color:var(--muted);font-size:.85rem}
+.top-right{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.prog{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted)}
+.prog-bar{width:120px;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.prog-bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .4s}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:.9rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* shell */
+.shell{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:20px 60px;display:grid;grid-template-columns:260px minmax(0,1fr);gap:28px}
+.rail{position:sticky;top:76px;align-self:start;display:flex;flex-direction:column;gap:2px}
+.rail-label{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:4px 10px 8px}
+.rail button{display:grid;grid-template-columns:28px 1fr 16px;align-items:center;gap:8px;text-align:left;border:0;background:transparent;border-radius:8px;padding:7px 10px;cursor:pointer;color:var(--ink);font-size:.9rem;line-height:1.3}
+.rail button:hover{background:var(--surface-2)}
+.rail button[aria-current="true"]{background:var(--accent-soft);font-weight:600}
+.rail .n{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+.rail .tick{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line)}
+.rail .tick.done{background:var(--good);border-color:var(--good)}
+.mob-nav{display:none}
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .rail{display:none}
+  .mob-nav{display:flex;gap:8px;align-items:center}
+  .mob-nav select{flex:1;min-width:0;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--surface)}
+}
+
+/* station */
+.station{display:flex;flex-direction:column;gap:20px;min-width:0}
+.eyebrow{font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.st-head h2{font-size:2.1rem;margin-top:4px}
+.st-head .lede{margin-top:10px;max-width:68ch;color:var(--muted);font-size:1.02rem}
+.plain{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;max-width:820px}
+.plain b.k{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.plain p{max-width:68ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.panel h3{font-size:1.2rem;margin-bottom:4px}
+.panel .hint{color:var(--muted);font-size:.9rem;margin-bottom:14px;max-width:72ch}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ctl{display:grid;grid-template-columns:minmax(110px,150px) 1fr 64px;gap:10px;align-items:center;font-size:.9rem}
+.ctl input[type=range]{width:100%;accent-color:var(--accent)}
+.ctl output{font-family:var(--f-mono);text-align:right;font-size:.88rem}
+.ctls{display:flex;flex-direction:column;gap:8px}
+.stat{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:8px;background:var(--surface-2);min-width:0}
+.stat small{font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.stat b{font-family:var(--f-mono);font-size:1.35rem;font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 10px;font-size:.82rem;font-weight:600;background:var(--surface-2)}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.warn{background:var(--signal-soft);color:var(--signal)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.note{border-radius:8px;padding:10px 14px;font-size:.92rem;background:var(--surface-2)}
+.note.warn{background:var(--signal-soft)}
+.note.bad{background:var(--bad-soft)}
+.note.good{background:var(--good-soft)}
+.svgwrap{overflow-x:auto}
+svg text{font-family:var(--f-body)}
+select.sel{padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--surface);max-width:100%}
+
+/* check question */
+.check{border:1px solid var(--accent);border-radius:var(--r);padding:16px 18px;background:var(--surface)}
+.check .q{font-weight:600;margin:4px 0 12px;max-width:70ch}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 12px;cursor:pointer}
+.opt:hover{border-color:var(--accent)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.fb{margin-top:10px;font-size:.93rem;max-width:72ch}
+.take{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;background:var(--signal-soft);border-radius:var(--r);padding:14px 18px}
+.take b{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--signal);padding-top:3px;white-space:nowrap}
+.take p{max-width:72ch;font-weight:500}
+.navrow{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* specific */
+.toolcard{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg);min-width:0}
+.toolcard h4{margin:0;font-size:.98rem}
+.toolcard p{font-size:.88rem;color:var(--muted)}
+.toolcard label{font-size:.78rem;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.verdict{font-size:.85rem;font-weight:600}
+.sortitem{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);padding:6px 10px;cursor:pointer;font-size:.83rem;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:600}
+.stages{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.stage{border-radius:8px;padding:8px;font-size:.8rem;text-align:center;background:var(--surface-2);border:1px solid var(--line);line-height:1.3}
+.stage b{display:block;font-size:.88rem}
+.stage.live{background:var(--accent-soft);border-color:var(--accent)}
+.stage.dim{opacity:.45}
+@media (max-width:640px){.stages{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.cx{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.cx{grid-template-columns:minmax(0,1fr)}}
+canvas{display:block;max-width:100%}
+.film{width:100%;max-width:420px;aspect-ratio:1/1;border-radius:8px;background:var(--img-bg)}
+.steps{display:flex;flex-direction:column;gap:6px}
+.steps button{text-align:left}
+.cm{display:grid;grid-template-columns:auto 1fr 1fr;gap:4px;font-size:.85rem;max-width:420px}
+.cm div{padding:8px;border-radius:6px;text-align:center}
+.cm .h{background:transparent;color:var(--muted);font-weight:600}
+.cm .tp{background:var(--accent);color:var(--surface)}
+.cm .fn{background:var(--accent-soft);color:var(--accent)}
+.cm .fp{background:var(--signal);color:var(--surface)}
+.cm .tn{background:var(--surface-2)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.bars{display:flex;flex-direction:column;gap:6px}
+.barrow{display:grid;grid-template-columns:minmax(90px,170px) 1fr 52px;gap:8px;align-items:center;font-size:.86rem}
+.barrow .track{height:14px;background:var(--surface-2);border-radius:4px;position:relative;overflow:hidden}
+.barrow .fill{position:absolute;top:0;bottom:0;border-radius:4px;background:var(--accent)}
+.barrow .fill.neg{background:var(--signal)}
+.barrow output{font-family:var(--f-mono);text-align:right;font-size:.82rem}
+.chat{display:flex;flex-direction:column;gap:10px;max-height:460px;overflow-y:auto;padding:4px}
+.msg{max-width:84%;padding:10px 13px;border-radius:12px;font-size:.92rem}
+.msg.you{align-self:flex-end;background:var(--accent);color:var(--surface);border-bottom-right-radius:3px}
+.msg.them{align-self:flex-start;background:var(--surface-2);border-bottom-left-radius:3px}
+.msg .flag{display:block;margin-top:6px;font-size:.82rem;font-weight:600;color:var(--bad)}
+.qlist{display:flex;flex-direction:column;gap:6px}
+.qlist button{text-align:left}
+.fam{display:flex;flex-wrap:wrap;gap:8px}
+.fam button{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:6px 12px;cursor:pointer;font-size:.85rem}
+.fam button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.tokens{display:flex;flex-wrap:wrap;gap:6px;font-family:var(--f-display);font-size:1.25rem}
+.gloss{display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:6px 16px;font-size:.92rem}
+.gloss dt{font-weight:700}
+.gloss dd{margin:0;color:var(--muted)}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);max-width:760px;width:calc(100% - 32px);padding:0}
+dialog::backdrop{background:rgba(5,12,14,.5)}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);gap:10px}
+.dlg-body{padding:16px 18px;max-height:70vh;overflow-y:auto}
+.ten{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;counter-reset:t}
+.ten li{list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px 10px 44px;position:relative;font-size:.93rem}
+.ten li::before{counter-increment:t;content:counter(t);position:absolute;left:12px;top:9px;font-family:var(--f-mono);color:var(--accent);font-weight:600}
+.ten li.hi{background:var(--signal-soft);border-color:var(--signal)}
+@media (max-width:640px){.ten{grid-template-columns:minmax(0,1fr)}}
+.route{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.route button{display:flex;flex-direction:column;gap:3px;text-align:left;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface);cursor:pointer}
+.route button:hover{border-color:var(--accent)}
+.route .n{font-family:var(--f-mono);font-size:.75rem;color:var(--accent)}
+.route b{font-size:.95rem}
+.route span{font-size:.82rem;color:var(--muted)}
+.foot{font-size:.8rem;color:var(--muted);max-width:80ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body style="margin:0">
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><h1>AI Ward Round</h1><span>Fundamentals of AI for clinicians</span></div>
+    <div class="top-right">
+      <div class="prog"><span id="progTxt">0 of 11 stations</span><div class="prog-bar"><i id="progBar"></i></div></div>
+      <a class="btn ghost" href="lectures/index.html" style="text-decoration:none">Lectures</a>
+      <button class="btn ghost" id="glossBtn" type="button">Glossary</button>
+    </div>
+    <div class="mob-nav" style="width:100%"><select id="mobSel" aria-label="Go to station"></select></div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Stations"><div class="rail-label">Stations</div></nav>
+  <main id="main" class="station" aria-live="polite"></main>
+</div>
+
+<dialog id="glossDlg" aria-labelledby="glossTitle">
+  <div class="dlg-head"><h3 id="glossTitle">Glossary</h3>
+    <div class="row"><input id="glossQ" type="search" placeholder="Search terms" aria-label="Search glossary" style="padding:6px 10px;border-radius:7px;border:1px solid var(--line);background:var(--bg)">
+    <button class="btn" type="button" id="glossClose">Close</button></div></div>
+  <div class="dlg-body"><dl class="gloss" id="glossList"></dl></div>
+</dialog>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids){
+  const e = document.createElement(tag);
+  if (attrs) for (const [k,v] of Object.entries(attrs)){
+    if (k === 'class') e.className = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+}
+const SVGNS = 'http://www.w3.org/2000/svg';
+function s(tag, attrs, ...kids){
+  const e = document.createElementNS(SVGNS, tag);
+  if (attrs) for (const [k,v] of Object.entries(attrs)) if (v != null) e.setAttribute(k, v);
+  for (const k of kids.flat()) if (k != null) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+}
+function cssv(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r){ let u=0,v=0; while(!u)u=r(); while(!v)v=r(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+const sig = z => 1/(1+Math.exp(-z));
+const pct = (x,d=0) => (100*x).toFixed(d)+'%';
+const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
+function slider(label, id, min, max, step, val, fmt, onInput){
+  const out = h('output', {for:id});
+  const inp = h('input', {type:'range', id, min, max, step, value:val, 'aria-label':label});
+  const upd = () => { out.textContent = fmt(+inp.value); onInput && onInput(+inp.value); };
+  inp.addEventListener('input', upd);
+  const row = h('div', {class:'ctl'}, h('label', {for:id}, label), inp, out);
+  out.textContent = fmt(+val);
+  row.input = inp; row.update = upd;
+  return row;
+}
+function seg(options, value, onChange, label){
+  const wrap = h('div', {class:'seg', role:'group', 'aria-label':label||''});
+  const btns = options.map(([v,t]) => {
+    const b = h('button', {type:'button', 'aria-pressed': String(v===value)}, t);
+    b.addEventListener('click', () => { btns.forEach(x=>x.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); onChange(v); });
+    return b;
+  });
+  wrap.append(...btns); return wrap;
+}
+const themeListeners = [];
+function onTheme(fn){ themeListeners.push(fn); }
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>themeListeners.forEach(f=>f()));
+new MutationObserver(()=>themeListeners.forEach(f=>f())).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+/* ---------- progress ---------- */
+let done = {};
+try { done = JSON.parse(localStorage.getItem('aiwr-done') || '{}') || {}; } catch(e){ done = {}; }
+function markDone(id){
+  done[id] = true;
+  try { localStorage.setItem('aiwr-done', JSON.stringify(done)); } catch(e){}
+  renderProgress();
+}
+
+/* ---------- check question ---------- */
+function check(id, q, options, correct, explain){
+  const fb = h('div', {class:'fb'});
+  const box = h('section', {class:'check', 'aria-label':'Check your understanding'},
+    h('div', {class:'eyebrow'}, 'Check your understanding'), h('p', {class:'q'}, q));
+  const opts = h('div', {class:'opts'});
+  options.forEach((o,i) => {
+    const b = h('button', {class:'opt', type:'button'}, o);
+    b.addEventListener('click', () => {
+      opts.querySelectorAll('.opt').forEach(x=>x.classList.remove('right','wrong'));
+      if (i === correct){ b.classList.add('right'); fb.innerHTML = '<b>Right.</b> ' + explain; markDone(id); }
+      else { b.classList.add('wrong'); fb.innerHTML = '<b>Not quite.</b> Think about it once more, then try another answer.'; }
+    });
+    opts.append(b);
+  });
+  box.append(opts, fb);
+  return box;
+}
+function takeaway(text){ return h('div', {class:'take'}, h('b', null, 'At the bedside'), h('p', null, text)); }
+function plain(rows){
+  const d = h('div', {class:'plain'});
+  rows.forEach(([k,v]) => d.append(h('b', {class:'k'}, k), h('p', {html:v})));
+  return d;
+}
+
+/* ---------- small line chart ---------- */
+function lineChart({w=640, hgt=240, xs, series, ymin=0, ymax=1, yfmt=v=>v, xlabels=[], marks=[], ylab=''}){
+  const m = {l:46, r:14, t:12, b:30};
+  const X = i => m.l + (w-m.l-m.r) * (i/(xs-1||1));
+  const Y = v => m.t + (hgt-m.t-m.b) * (1 - (v-ymin)/(ymax-ymin));
+  const g = s('svg', {viewBox:`0 0 ${w} ${hgt}`, width:'100%', role:'img'});
+  for (let k=0;k<=4;k++){ const v = ymin + (ymax-ymin)*k/4;
+    g.append(s('line',{x1:m.l,x2:w-m.r,y1:Y(v),y2:Y(v),stroke:'var(--line)','stroke-width':1}));
+    g.append(s('text',{x:m.l-6,y:Y(v)+4,'text-anchor':'end','font-size':11,fill:'var(--muted)'}, yfmt(v))); }
+  xlabels.forEach(([i,t]) => g.append(s('text',{x:X(i),y:hgt-8,'text-anchor':'middle','font-size':11,fill:'var(--muted)'}, t)));
+  if (ylab) g.append(s('text',{x:12,y:m.t+4,'font-size':11,fill:'var(--muted)'}, ''));
+  marks.forEach(mk => { g.append(s('line',{x1:X(mk.i),x2:X(mk.i),y1:m.t,y2:hgt-m.b,stroke:mk.color||'var(--signal)','stroke-dasharray':'4 4','stroke-width':1.5}));
+    g.append(s('text',{x:X(mk.i)+5,y:m.t+12,'font-size':11,fill:mk.color||'var(--signal)','font-weight':600}, mk.label)); });
+  series.forEach(sr => {
+    const pts = sr.data.map((v,i)=> v==null?null:[X(i),Y(v)]).filter(Boolean);
+    if (!pts.length) return;
+    g.append(s('polyline',{points:pts.map(p=>p.join(',')).join(' '),fill:'none',stroke:sr.color,'stroke-width':sr.width||2.5,'stroke-dasharray':sr.dash||null,'stroke-linejoin':'round'}));
+    const last = pts[pts.length-1]; g.append(s('circle',{cx:last[0],cy:last[1],r:4,fill:sr.color}));
+  });
+  return g;
+}
+function legend(items){ return h('div',{class:'legend'}, items.map(([c,t,dash]) => h('span',null, h('i',{style:`background:${c}`}), t))); }
+
+/* =====================================================================
+   STATIONS
+   ===================================================================== */
+const STATIONS = [];
+
+/* ---------- 0. Welcome ---------- */
+STATIONS.push({id:'start', n:'00', title:'Before the round', short:'How this tool works',
+render(main){
+  main.append(
+    h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Welcome'),
+      h('h2',null,'Learn AI the way you learnt medicine: by seeing cases'),
+      h('p',{class:'lede'},'This is a ward round of eleven stations. At each one you run a small simulation, see what happens, and answer one question. You need no maths and no computing background. Every patient and number here is invented for teaching.')),
+    plain([
+      ['How it works','Read the short brief, play with the simulation, then answer the check question. A station turns green when you answer it correctly. Your progress is kept in this browser only.'],
+      ['Time','About 60 to 90 minutes for all stations. Stations 4 to 9 each stand alone if you only have a few minutes.'],
+      ['By the end','You will be able to read a claim about a clinical AI tool and know which questions to ask the supplier, the paper or the enthusiastic colleague.']
+    ]),
+  );
+  const route = h('div',{class:'route'});
+  STATIONS.slice(1).forEach((st,i) => route.append(h('button',{type:'button',onclick:()=>go(i+1)}, h('span',{class:'n'},'Station '+st.n), h('b',null,st.title), h('span',null,st.short))));
+  main.append(h('section',{class:'panel'}, h('h3',null,'The route'), h('p',{class:'hint'},'Each station builds on the one before. Station 9, reading the evidence, is the most practical; protect time for it.'), route));
+  main.append(h('p',{class:'foot'},'Based on Appendix A, "An Introduction to AI for the Clinical Expert", in A Clinical Guide to AI in Healthcare. For education only: not a clinical decision tool.'));
+}});
+
+/* ---------- 1. Words ---------- */
+STATIONS.push({id:'words', n:'01', title:'What the words mean', short:'Two questions people muddle',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 01 · What kind of system, and how was it trained?'),
+    h('h2',null,'Four "AI tools", four different conversations'),
+    h('p',{class:'lede'},'People mix up two separate questions. What kind of system is it? And how was it trained? Sort four tools a hospital says it uses, and see why each needs its own assurance conversation.')));
+  main.append(plain([
+    ['The rings','<b>AI</b> is any computer doing a task that would normally need a person, including hand-written rules. <b>Machine learning</b> works the rules out from examples. <b>Deep learning</b> is machine learning with many-layered networks. <b>Generative AI</b> sits inside deep learning and produces new content instead of a label.'],
+    ['Training','Supervised, unsupervised, reinforcement and self-supervised are <i>methods</i>, not places in the rings. One system can use several.']
+  ]));
+  const tools = [
+    {name:'Early-warning score', desc:'A consultant wrote the threshold for each vital sign by hand.', kind:'ai', train:'none'},
+    {name:'Readmission model', desc:'Logistic regression learned from 30,000 past discharges, each marked readmitted or not.', kind:'ml', train:'sup'},
+    {name:'Chest film reader', desc:'A many-layered network trained on 100,000 radiographs labelled by radiologists.', kind:'dl', train:'sup'},
+    {name:'Ambient scribe', desc:'Listens to the consultation and drafts the clinic letter.', kind:'gen', train:'stack'}];
+  const KIND = {ai:'AI, rules only', ml:'Machine learning', dl:'Deep learning', gen:'Generative AI'};
+  const TRAIN = {none:'Not trained: rules written by hand', sup:'Supervised', unsup:'Unsupervised', rl:'Reinforcement learning only', stack:'Self-supervised, then supervised, then human feedback (RLHF)'};
+  const picks = tools.map(()=>({kind:'', train:''}));
+  const cards = h('div',{class:'grid2'});
+  const verdicts = [];
+  tools.forEach((t,i) => {
+    const k = h('select',{class:'sel', id:'w-k'+i}, h('option',{value:''},'Choose…'), Object.entries(KIND).map(([v,l])=>h('option',{value:v},l)));
+    const tr = h('select',{class:'sel', id:'w-t'+i}, h('option',{value:''},'Choose…'), Object.entries(TRAIN).map(([v,l])=>h('option',{value:v},l)));
+    k.onchange = () => { picks[i].kind = k.value; }; tr.onchange = () => { picks[i].train = tr.value; };
+    const v = h('div',{class:'verdict'}); verdicts.push(v);
+    cards.append(h('div',{class:'toolcard'}, h('h4',null,t.name), h('p',null,t.desc),
+      h('label',{for:'w-k'+i},'What kind of system is it?', k), h('label',{for:'w-t'+i},'How was it trained?', tr), v));
+  });
+  const ringsWrap = h('div',{class:'svgwrap'});
+  function drawRings(showAll){
+    ringsWrap.innerHTML='';
+    const g = s('svg',{viewBox:'0 0 640 300',width:'100%',role:'img','aria-label':'Nested rings: AI contains machine learning, which contains deep learning, which contains generative AI. Training methods sit on a separate axis.'});
+    const rings = [['ai','Artificial intelligence',10,10,380,280],['ml','Machine learning',40,48,320,236],['dl','Deep learning',70,86,260,192],['gen','Generative AI',100,124,200,150]];
+    rings.forEach(([key,l,x,y,w,hh],j) => { g.append(s('rect',{x,y,width:w,height:hh,rx:18,fill: j%2?'var(--surface-2)':'var(--surface)',stroke:'var(--accent)','stroke-width':1.5}));
+      g.append(s('text',{x:x+14,y:y+22,'font-size':13,'font-weight':700,fill:'var(--accent)'}, l)); });
+    const pos = {ai:[30,268],ml:[60,252],dl:[90,214],gen:[200,214]};
+    const trainX = 430;
+    g.append(s('text',{x:trainX,y:28,'font-size':13,'font-weight':700,fill:'var(--ink)'},'How it was trained'));
+    ['Supervised','Unsupervised','Reinforcement','Self-supervised'].forEach((t,j)=>{ g.append(s('rect',{x:trainX,y:44+j*44,width:196,height:34,rx:8,fill:'var(--surface-2)',stroke:'var(--line)'}));
+      g.append(s('text',{x:trainX+12,y:66+j*44,'font-size':13,fill:'var(--ink)'},t)); });
+    g.append(s('text',{x:trainX,y:236,'font-size':12,fill:'var(--muted)'},'Methods, not places in the rings.'));
+    g.append(s('text',{x:trainX,y:254,'font-size':12,fill:'var(--muted)'},'A modern LLM stacks three of them.'));
+    tools.forEach((t,i) => { const p = picks[i]; const key = showAll ? t.kind : p.kind; if (!key) return;
+      const [x,y] = pos[key]; const cx = x + (key==='gen'? i*16 : 22+i*18);
+      g.append(s('circle',{cx, cy:y, r:11, fill: showAll||p.kind===t.kind ? 'var(--accent)' : 'var(--bad)'}));
+      g.append(s('text',{x:cx,y:y+4,'text-anchor':'middle','font-size':11,'font-weight':700,fill:'var(--surface)'}, String(i+1))); });
+    ringsWrap.append(g);
+  }
+  drawRings(false);
+  const res = h('div',{class:'note'},'Make your choices, then check them. Numbered dots show where each tool sits in the rings.');
+  const btn = h('button',{class:'btn primary',type:'button'},'Check my sorting');
+  btn.onclick = () => {
+    let ok = 0;
+    tools.forEach((t,i) => { const a = picks[i].kind===t.kind, b = picks[i].train===t.train; ok += a&&b;
+      verdicts[i].innerHTML = (a&&b) ? '<span class="pill good">Correct on both</span>' :
+        `<span class="pill bad">Not yet</span> <span style="color:var(--muted);font-weight:400">It is ${KIND[t.kind].toLowerCase()}, trained by: ${TRAIN[t.train].toLowerCase()}.</span>`; });
+    drawRings(false);
+    res.className = 'note ' + (ok===4?'good':'warn');
+    res.innerHTML = ok===4 ? '<b>All four right.</b> Four positions on both axes means four different assurance conversations: a rule set you can read line by line, a regression with visible weights, an image network nobody can narrate, and a generator that can invent things that were never said.'
+      : `<b>${ok} of 4 fully right.</b> Look at the notes under each card. The commonest slip is calling the scribe "reinforcement learning": that is one of three methods used to build it, not what it is.`;
+  };
+  const show = h('button',{class:'btn',type:'button',onclick:()=>drawRings(true)},'Show the answer key');
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: sort the trust\'s four tools'), h('p',{class:'hint'},'For each tool, choose where it sits in the rings and how it was trained.'),
+    cards, h('div',{class:'row',style:'margin:14px 0'}, btn, show), res, h('div',{style:'margin-top:14px'}, ringsWrap)));
+  main.append(check('words','A colleague says "ChatGPT is reinforcement learning". What is the most accurate reply?',
+    ['Yes, that is exactly what it is.','Reinforcement learning is one of three methods used to build it. It is not what it is.','No, it uses no reinforcement learning at all.'],1,
+    'A modern large language model is a deep generative network built in three stages: self-supervised pre-training, supervised fine-tuning, then reinforcement learning from human feedback. Image generators such as diffusion models are generative and use no reinforcement learning at all.'));
+  main.append(takeaway('When someone says "our AI", ask two separate questions: what kind of system is it, and how was it trained? The answers decide what evidence you need.'));
+}});
+
+/* ---------- 2. Rules vs examples (sepsis) ---------- */
+function makeSepsis(n, site, seed){
+  const r = mulberry32(seed), out = [];
+  for (let i=0;i<n;i++){
+    const ward7 = r() < 0.18 ? 1 : 0;
+    const p = site==='A' ? (ward7 ? 0.42 : 0.06) : (ward7 ? 0.02 : 0.09);
+    const y = r() < p ? 1 : 0;
+    const hr = (y?97:87) + gauss(r)*15, rr = (y?20.5:17.5) + gauss(r)*4.5, temp = (y?37.9:37.2) + gauss(r)*0.9, lac = Math.max(0.4,(y?2.3:1.5) + gauss(r)*1.0);
+    out.push({hr,rr,temp,lac,ward7,y});
+  }
+  return out;
+}
+function trainLR(data, feats, iters=500, lr=0.4){
+  const n = data.length, k = feats.length;
+  const mu = feats.map(f => data.reduce((a,d)=>a+d[f],0)/n);
+  const sd = feats.map((f,j) => Math.sqrt(data.reduce((a,d)=>a+(d[f]-mu[j])**2,0)/n) || 1);
+  const X = data.map(d => feats.map((f,j)=>(d[f]-mu[j])/sd[j]));
+  let w = new Array(k).fill(0), b = 0;
+  for (let it=0; it<iters; it++){
+    const gw = new Array(k).fill(0); let gb = 0;
+    for (let i=0;i<n;i++){ let z=b; for(let j=0;j<k;j++) z+=w[j]*X[i][j]; const e = sig(z)-data[i].y; for(let j=0;j<k;j++) gw[j]+=e*X[i][j]; gb+=e; }
+    for (let j=0;j<k;j++) w[j]-=lr*gw[j]/n; b-=lr*gb/n;
+  }
+  return {w,b,mu,sd,feats, predict(d){ let z=b; feats.forEach((f,j)=>z+=w[j]*(d[f]-mu[j])/sd[j]); return sig(z); }};
+}
+function auc(scores, ys){
+  const idx = scores.map((s,i)=>[s,ys[i]]).sort((a,b)=>a[0]-b[0]);
+  let rank=0, pos=0, sumR=0; idx.forEach(([s,y],i)=>{ if(y){pos++; sumR+=i+1;} });
+  const neg = ys.length-pos; return (sumR - pos*(pos+1)/2)/(pos*neg);
+}
+function confusion(scores, ys, thr){
+  let tp=0,fp=0,fn=0,tn=0; scores.forEach((s,i)=>{ const a = s>=thr; if(ys[i]){a?tp++:fn++;} else {a?fp++:tn++;} });
+  return {tp,fp,fn,tn, sens: tp/(tp+fn||1), ppv: tp/(tp+fp||1), spec: tn/(tn+fp||1)};
+}
+STATIONS.push({id:'rules', n:'02', title:'Rules first or examples first', short:'Build a sepsis alert two ways',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 02 · Figure A.1'),
+    h('h2',null,'Build the same sepsis alert two ways'),
+    h('p',{class:'lede'},'Ordinary software is given the rules. Machine learning is given the answers and works the rules out. Build a rule-based alert yourself, then let a model learn one from past admissions, and take both to a second hospital.')));
+  main.append(plain([
+    ['Rule-based','You set the thresholds. Every line can be read and audited, but it misses presentations nobody anticipated.'],
+    ['Learned','The model finds patterns in labelled admissions. It can find subtle combinations, and it can also find a shortcut that holds in one hospital and not in another.']
+  ]));
+  const trainA = makeSepsis(4000,'A',11), testA = makeSepsis(2000,'A',22), testB = makeSepsis(2000,'B',33);
+  // --- rule panel
+  const st = {hr:100, rr:22, temp:38.0, lac:2.0, need:2};
+  const ruleOut = h('div');
+  function evalRule(d){ let c=0; if(d.hr>st.hr)c++; if(d.rr>st.rr)c++; if(d.temp>st.temp)c++; if(d.lac>st.lac)c++; return c>=st.need ? 1 : 0; }
+  function ruleStats(data){ return confusion(data.map(evalRule), data.map(d=>d.y), 0.5); }
+  function drawRule(){
+    const a = ruleStats(testA), b = ruleStats(testB);
+    ruleOut.innerHTML='';
+    ruleOut.append(resultTable([['Hospital A',a],['Hospital B',b]]));
+  }
+  const ruleCtl = h('div',{class:'ctls'},
+    slider('Heart rate above','r-hr',80,130,1,st.hr,v=>v+'/min',v=>{st.hr=v;drawRule();}),
+    slider('Resp. rate above','r-rr',14,32,1,st.rr,v=>v+'/min',v=>{st.rr=v;drawRule();}),
+    slider('Temperature above','r-t',37,39.5,0.1,st.temp,v=>v.toFixed(1)+'°C',v=>{st.temp=v;drawRule();}),
+    slider('Lactate above','r-l',1,5,0.1,st.lac,v=>v.toFixed(1),v=>{st.lac=v;drawRule();}),
+    h('div',{class:'ctl'}, h('span',null,'Alert when'), seg([[1,'any 1'],[2,'any 2'],[3,'any 3'],[4,'all 4']],2,v=>{st.need=v;drawRule();},'Number of criteria'), h('span')));
+  drawRule();
+  // --- ML panel
+  let useWard = true;
+  const mlOut = h('div',null, h('p',{class:'note'},'Not trained yet. Press the button to learn from 4,000 labelled admissions at Hospital A.'));
+  function trainML(){
+    const feats = ['hr','rr','temp','lac'].concat(useWard?['ward7']:[]);
+    const m = trainLR(trainA, feats);
+    const sa = testA.map(d=>m.predict(d)), sb = testB.map(d=>m.predict(d));
+    // threshold chosen at Hospital A to catch 80% of sepsis
+    const pos = sa.filter((_,i)=>testA[i].y).sort((x,y)=>x-y); const thr = pos[Math.floor(pos.length*0.2)];
+    const a = confusion(sa, testA.map(d=>d.y), thr), b = confusion(sb, testB.map(d=>d.y), thr);
+    a.auc = auc(sa, testA.map(d=>d.y)).toFixed(2); b.auc = auc(sb, testB.map(d=>d.y)).toFixed(2);
+    const NAMES = {hr:'Heart rate', rr:'Resp. rate', temp:'Temperature', lac:'Lactate', ward7:'Ward code 7'};
+    const maxw = Math.max(...m.w.map(Math.abs));
+    const bars = h('div',{class:'bars'}, m.feats.map((f,j)=> h('div',{class:'barrow'}, h('span',null,NAMES[f]),
+      h('div',{class:'track'}, h('div',{class:'fill'+(m.w[j]<0?' neg':''),style:`left:0;width:${100*Math.abs(m.w[j])/maxw}%`})), h('output',null,m.w[j].toFixed(2)))));
+    mlOut.innerHTML='';
+    mlOut.append(h('p',{class:'hint',style:'margin-bottom:6px'},'What the model learned to weigh most (longer bar = counts for more):'), bars,
+      h('div',{style:'margin-top:12px'}, resultTable([['Hospital A',a],['Hospital B',b]])),
+      h('p',{class:'note '+(useWard?'warn':'good'),style:'margin-top:10px'}));
+    mlOut.querySelector('.note').innerHTML = useWard
+        ? `<b>Look at ward code 7.</b> At Hospital A, ward 7 admits the sickest patients, so the model learned "ward 7 means sepsis". At Hospital B, ward 7 is an elective ward. The alert catches ${pct(b.sens)} of sepsis there instead of ${pct(a.sens)}, and its separation score falls from ${a.auc} to ${b.auc}. Nothing in the code changed.`
+        : `<b>Without the ward code</b> the model relies on physiology, which travels between hospitals. It catches ${pct(b.sens)} of sepsis at Hospital B against ${pct(a.sens)} at Hospital A (separation ${b.auc} against ${a.auc}).`;
+    window.__sepsis = {a,b,useWard};
+  }
+  const wardSeg = seg([[true,'Model may use ward code'],[false,'Physiology only']], true, v=>{useWard=v;}, 'Model inputs');
+  main.append(h('div',{class:'grid2'},
+    h('section',{class:'panel'}, h('h3',null,'A. You write the rules'), h('p',{class:'hint'},'Set the thresholds. Results are for 2,000 new admissions at each hospital.'), ruleCtl, h('div',{style:'margin-top:14px'}, ruleOut)),
+    h('section',{class:'panel'}, h('h3',null,'B. The model learns the rules'), h('p',{class:'hint'},'The model sees heart rate, respiratory rate, temperature, lactate and, if you allow it, the ward code. The alert threshold is set at Hospital A to catch 8 in 10 sepsis cases.'),
+      h('div',{class:'row',style:'margin-bottom:12px'}, wardSeg, h('button',{class:'btn primary',type:'button',onclick:trainML},'Train on Hospital A')), mlOut)));
+  main.append(check('rules','Which of the two alerts can be wrong in a way that nobody notices for a year?',
+    ['The rule-based alert','The machine-learned alert','Neither, if both were validated'],1,
+    'A learned alert can pick up a shortcut, like the ward code, that looks excellent where it was trained and quietly fails elsewhere. A rule only does what someone wrote, so it fails in visible ways. Neither column is "the right answer": the learned one can do more and needs continuous monitoring afterwards.'));
+  main.append(takeaway('The machine learns the rule; people choose the data, the labels and the goal. A learned tool is only as good as the examples it was shown, so ask where those examples came from.'));
+}});
+function resultTable(rows){
+  const t = h('div',{class:'cm',style:'grid-template-columns:auto 1fr 1fr;max-width:none'},
+    h('div',{class:'h'}), h('div',{class:'h'},'Sepsis caught'), h('div',{class:'h'},'Alerts that were sepsis'));
+  rows.forEach(([name,c]) => t.append(h('div',{class:'h',style:'text-align:left'},name),
+    h('div',{class:'tn'}, h('b',{class:'mono',style:'font-size:1.15rem'},pct(c.sens))),
+    h('div',{class:'tn'}, h('b',{class:'mono',style:'font-size:1.15rem'},pct(c.ppv)))));
+  return t;
+}
+
+/* ---------- 3. Paradigms ---------- */
+STATIONS.push({id:'paradigms', n:'03', title:'Three ways to learn', short:'Supervised, unsupervised, reinforcement',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 03 · Figure A.2'),
+    h('h2',null,'Same service, three kinds of learning'),
+    h('p',{class:'lede'},'Knowing which kind of learning a tool uses tells you which evidence to demand. Sort six real-world style tools, then see the question each kind of learning should trigger.')));
+  main.append(plain([
+    ['Supervised','Learns from examples where someone has already written down the right answer. Most diagnostic AI is this.'],
+    ['Unsupervised','Given no answers. It looks for groups or structure in the data.'],
+    ['Reinforcement','Learns by acting and seeing what happens, like refining your management over a career.']
+  ]));
+  const P = {sup:'Supervised', unsup:'Unsupervised', rl:'Reinforcement'};
+  const ASK = {sup:'Who labelled the examples, and how reliably? The labels set the ceiling on the model.',
+               unsup:'Do the groups mean anything clinically, or are they an artefact of how data was recorded?',
+               rl:'Where did it do its trial and error? If the answer is "on patients", stop.'};
+  const items = [
+    ['Classify each mammogram as recall or no recall, learning from 200,000 films with known outcomes.','sup'],
+    ['Find breast density and texture groups that no existing category captures.','unsup'],
+    ['Adjust each woman\'s recall interval, learning from the outcomes of earlier choices.','rl'],
+    ['Group heart-failure patients into phenotypes nobody had named.','unsup'],
+    ['Flag bleeds on head CT, trained on scans already reported by neuroradiologists.','sup'],
+    ['Learn an insulin dosing policy by trying doses and observing glucose.','rl']];
+  const picks = items.map(()=>null);
+  const list = h('div',{class:'opts'});
+  const marks = [];
+  items.forEach(([t,a],i) => {
+    const m = h('div',{style:'grid-column:1/-1;font-size:.85rem'}); marks.push(m);
+    list.append(h('div',{class:'sortitem'}, h('span',null,t), seg(Object.entries(P), null, v=>{picks[i]=v; m.textContent='';}, 'Kind of learning'), m));
+  });
+  const askBox = h('div',{class:'grid3',style:'margin-top:14px'});
+  const res = h('div',{class:'note',style:'margin-top:12px'},'Sort all six, then check.');
+  const btn = h('button',{class:'btn primary',type:'button'},'Check');
+  btn.onclick = () => {
+    let ok=0; items.forEach(([t,a],i)=>{ const r = picks[i]===a; ok+=r; marks[i].innerHTML = r ? '<span class="pill good">Correct</span>' : `<span class="pill bad">${P[a]}</span> <span style="color:var(--muted)">${picks[i]?'':'(not answered)'}</span>`; });
+    res.className='note '+(ok===6?'good':'warn');
+    res.innerHTML = `<b>${ok} of 6.</b> ` + (ok===6 ? 'Notice the first three: one service, breast screening, and three completely different evidence bases.' : 'Look at what the tool is given: answers (supervised), nothing but data (unsupervised), or the results of its own actions (reinforcement).');
+    askBox.innerHTML=''; Object.keys(P).forEach(k => askBox.append(h('div',{class:'stat'}, h('small',null,'Ask of '+P[k].toLowerCase()), h('span',{style:'font-size:.92rem'},ASK[k]))));
+  };
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: sort the tools'), h('p',{class:'hint'},'Choose the kind of learning for each tool.'), list, h('div',{class:'row',style:'margin-top:12px'},btn), res, askBox));
+  main.append(check('paradigms','A supplier says their unsupervised tool is "free of human bias because it uses no labels". What have they also given up?',
+    ['Nothing: it is strictly better.','Any ground truth to say whether its output is correct.','Only speed.'],1,
+    'No labels means no labelling bias, but also no right answers to check against. You gain freedom and lose the ability to say whether the groups are correct.'));
+  main.append(takeaway('Ask which kind of learning the tool uses before you look at any results. The answer tells you what evidence to demand.'));
+}});
+
+/* ---------- 4. Lifecycle & drift ---------- */
+STATIONS.push({id:'lifecycle', n:'04', title:'How a tool is built and kept', short:'Six stages and drift',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 04 · Figure A.3'),
+    h('h2',null,'A model is a maintained process, not a delivered object'),
+    h('p',{class:'lede'},'Run four years of a deterioration score. In spring 2020 the case mix, admission thresholds and recording practice all change. Nothing in the code changes. Decide whether anyone owns stage six.')));
+  const stagesEl = h('div',{class:'stages'});
+  const STG = [['Collect','Is it my population?'],['Prepare','Who assigned the labels?'],['Train','On whose machine?'],['Validate','Was it truly held back?'],['Deploy','Who is accountable?'],['Monitor','Is anyone watching?']];
+  STG.forEach(([a,b],i)=> stagesEl.append(h('div',{class:'stage'+(i>=4?' live':'')}, h('b',null,(i+1)+'. '+a), b)));
+  let monitor = true, month = 0, timer = null, retrainAt = null, flagAt = null;
+  const N = 48;
+  const months = ['Jan 2019','Jan 2020','Jan 2021','Jan 2022','Dec 2022'];
+  const r = mulberry32(7);
+  const noise = Array.from({length:N},()=>gauss(r));
+  const shift = 15; // Apr 2020
+  function sim(){
+    const pred=[], obs=[], resp=[]; let respNow = 0.9, retrain=null, flag=null, over=0;
+    for (let t=0;t<N;t++){
+      let o = t<shift ? 0.08 : 0.06; o += noise[t]*0.004;
+      let p = t<shift ? 0.08 : (retrain!==null && t>=retrain ? 0.062 : 0.13 + Math.min(0.02,(t-shift)*0.001));
+      p += noise[(t+5)%N]*0.003;
+      if (monitor && t>=shift){ if (p-o>0.03) over++; if (over>=3 && flag===null) flag=t; if (flag!==null && retrain===null && t>=flag+2) retrain=t+1; }
+      const ppv = clamp(0.42*o/p*(0.08/o),0,1)*(o/0.08);
+      const target = clamp(0.25 + 1.6*ppv, 0.2, 0.93);
+      respNow += 0.18*(target-respNow);
+      pred.push(p); obs.push(o); resp.push(respNow);
+    }
+    return {pred,obs,resp,flag,retrain};
+  }
+  const chartWrap = h('div',{class:'svgwrap'});
+  const status = h('div',{class:'stats'});
+  const msg = h('div',{class:'note'});
+  function draw(){
+    const R = sim(); const cut = a => a.map((v,i)=> i<=month ? v : null);
+    chartWrap.innerHTML='';
+    const marks = [{i:shift,label:'Case mix shifts'}];
+    if (R.flag!==null && R.flag<=month) marks.push({i:R.flag,label:'Drift flagged',color:'var(--accent)'});
+    if (R.retrain!==null && R.retrain<=month) marks.push({i:R.retrain,label:'Re-trained',color:'var(--good)'});
+    chartWrap.append(lineChart({xs:N, ymin:0, ymax:0.16, yfmt:v=>pct(v), xlabels:[[0,months[0]],[12,months[1]],[24,months[2]],[36,months[3]],[47,months[4]]],
+      series:[{data:cut(R.pred),color:'var(--signal)'},{data:cut(R.obs),color:'var(--accent)'}], marks}));
+    const respChart = lineChart({xs:N, hgt:140, ymin:0, ymax:1, yfmt:v=>pct(v), xlabels:[[0,months[0]],[24,months[2]],[47,months[4]]], series:[{data:cut(R.resp),color:'var(--info)'}]});
+    chartWrap.append(legend([['var(--signal)','Risk the model predicts'],['var(--accent)','Deterioration that actually happened']]),
+      h('p',{class:'hint',style:'margin:12px 0 0'},'Staff who still respond to the alert'), respChart);
+    const gap = R.pred[month]-R.obs[month];
+    status.innerHTML='';
+    status.append(h('div',{class:'stat'},h('small',null,'Month'),h('b',null,monthName(month))),
+      h('div',{class:'stat'},h('small',null,'Over-calling'),h('b',null,(gap>0?'+':'')+pct(gap,1))),
+      h('div',{class:'stat'},h('small',null,'Staff responding'),h('b',null,pct(R.resp[month]))));
+    if (month < shift) { msg.className='note'; msg.innerHTML='Predicted and actual risk agree. The model is well calibrated.'; }
+    else if (!monitor) { msg.className='note bad'; msg.innerHTML='<b>Nobody owns stage six.</b> The model now predicts nearly twice the real risk. Alerts fire, most are false, and staff gradually stop responding. That quiet loss of trust is the more dangerous failure.'; }
+    else if (R.retrain!==null && month>=R.retrain) { msg.className='note good'; msg.innerHTML='<b>Monitoring caught the calibration shift</b> and triggered re-training on recent data. Predictions match reality again and staff response recovers.'; }
+    else { msg.className='note warn'; msg.innerHTML='Predictions have drifted above reality. A monitoring owner is watching the gap.'; }
+    window.__drift = R;
+  }
+  function monthName(t){ const y = 2019+Math.floor(t/12); return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][t%12]+' '+y; }
+  const playBtn = h('button',{class:'btn primary',type:'button'},'Play four years');
+  playBtn.onclick = () => {
+    if (timer){ clearInterval(timer); timer=null; playBtn.textContent='Play'; return; }
+    if (month>=N-1) month=0;
+    playBtn.textContent='Pause';
+    timer = setInterval(()=>{ month++; if (month>=N-1){ month=N-1; clearInterval(timer); timer=null; playBtn.textContent='Replay'; } draw(); }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 30 : 160);
+  };
+  const monSeg = seg([[true,'Monitoring owner in post'],[false,'Nobody owns stage six']], true, v=>{monitor=v; stagesEl.lastChild.classList.toggle('dim',!v); draw();}, 'Monitoring');
+  const scrub = slider('Jump to month','lc-m',0,N-1,1,0,v=>monthName(v),v=>{month=v;draw();});
+  month = N-1; scrub.input.value = N-1; scrub.update();
+  draw();
+  main.append(h('section',{class:'panel'}, h('h3',null,'The six stages'), h('p',{class:'hint'},'Each stage has a question attached. Read them as an audit checklist. Stages 5 and 6 are where the tool touches patients.'), stagesEl));
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: four years of a deterioration score'), h('p',{class:'hint'},'Choose who owns monitoring, then play. Try it both ways.'),
+    h('div',{class:'row',style:'margin-bottom:12px'}, monSeg, playBtn), scrub, h('div',{style:'margin:12px 0'},status), chartWrap, h('div',{style:'margin-top:10px'},msg)));
+  main.append(check('lifecycle','How often should a clinical model be re-trained?',
+    ['Every twelve months, as standard','When monitoring shows its performance has drifted','Never, once it has been validated'],1,
+    'There is no universal interval. The right answer is "when monitoring says so", which is exactly why monitoring is not optional.'));
+  main.append(takeaway('Ask: who in this organisation owns stage six? If the honest answer is nobody, the tool\'s performance is unobserved.'));
+}});
+
+/* ---------- 5. Neural network ---------- */
+STATIONS.push({id:'network', n:'05', title:'Inside a neural network', short:'Train one yourself',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 05 · Figure A.4'),
+    h('h2',null,'Learning means nudging numbers'),
+    h('p',{class:'lede'},'This network takes four clinical inputs and gives one risk score. Every line is a number called a weight. Show it cases and watch the lines change until its answers match reality.')));
+  const r = mulberry32(99);
+  const data = [];
+  for (let i=0;i<600;i++){
+    const age = 25 + r()*70, sbp = 80 + r()*90, lac = 0.6 + Math.pow(r(),1.6)*6, sc = Math.floor(r()*11);
+    const z = 0.045*(age-65) - 0.035*(sbp-115) + 0.7*(lac-2.2) + 0.25*(sc-5) - 0.6;
+    data.push({x:norm(age,sbp,lac,sc), y: r()<sig(z)?1:0, z});
+  }
+  function norm(age,sbp,lac,sc){ return [(age-60)/20,(sbp-125)/25,(lac-2.5)/1.6,(sc-5)/3]; }
+  let net, seen, hist;
+  function init(){
+    const rr = mulberry32(5);
+    const m = (a,b)=>Array.from({length:a},()=>Array.from({length:b},()=> (rr()*2-1)*0.9));
+    net = {W1:m(5,4), b1:new Array(5).fill(0), W2:m(5,5), b2:new Array(5).fill(0), W3:m(1,5)[0], b3:0};
+    seen = 0; hist = [loss()];
+  }
+  function fwd(x){
+    const h1 = net.W1.map((w,j)=>Math.tanh(w.reduce((a,wi,i)=>a+wi*x[i],net.b1[j])));
+    const h2 = net.W2.map((w,j)=>Math.tanh(w.reduce((a,wi,i)=>a+wi*h1[i],net.b2[j])));
+    const o = sig(net.W3.reduce((a,wi,i)=>a+wi*h2[i],net.b3));
+    return {h1,h2,o};
+  }
+  function step(d, lr=0.08){
+    const {h1,h2,o} = fwd(d.x); const e = o - d.y;
+    const d2 = net.W3.map((w,i)=> e*w*(1-h2[i]*h2[i]));
+    const d1 = h1.map((hv,i)=> (1-hv*hv) * net.W2.reduce((a,row,j)=>a+row[i]*d2[j],0));
+    for (let i=0;i<5;i++) net.W3[i] -= lr*e*h2[i]; net.b3 -= lr*e;
+    for (let j=0;j<5;j++){ for(let i=0;i<5;i++) net.W2[j][i] -= lr*d2[j]*h1[i]; net.b2[j]-=lr*d2[j]; }
+    for (let j=0;j<5;j++){ for(let i=0;i<4;i++) net.W1[j][i] -= lr*d1[j]*d.x[i]; net.b1[j]-=lr*d1[j]; }
+  }
+  function loss(){ let L=0; data.forEach(d=>{ const o = clamp(fwd(d.x).o,1e-6,1-1e-6); L += -(d.y*Math.log(o)+(1-d.y)*Math.log(1-o)); }); return L/data.length; }
+  function train(k){ for (let i=0;i<k;i++){ step(data[(seen+i)%data.length]); } seen+=k; hist.push(loss()); draw(); }
+  const pt = {age:72, sbp:92, lac:4.1, sc:7};
+  const svgWrap = h('div',{class:'svgwrap'});
+  const errWrap = h('div');
+  const readout = h('div',{class:'stats'});
+  function col(w){ return w>=0 ? 'var(--accent)' : 'var(--signal)'; }
+  function draw(){
+    const x = norm(pt.age,pt.sbp,pt.lac,pt.sc); const f = fwd(x);
+    const L = [[], [], [], []]; const X=[120,270,420,560]; const H=300;
+    const yy = (n,i)=> H/2 + (i-(n-1)/2)*52;
+    for (let i=0;i<4;i++) L[0].push([X[0],yy(4,i)]); for (let i=0;i<5;i++){L[1].push([X[1],yy(5,i)]);L[2].push([X[2],yy(5,i)]);} L[3].push([X[3],H/2]);
+    const g = s('svg',{viewBox:'0 0 640 310',width:'100%',role:'img','aria-label':'Neural network with 4 inputs, two hidden layers of 5 units and one output; 45 weighted connections.'});
+    const line = (a,b,w)=>{ const l = s('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:col(w),'stroke-width':(0.4+Math.min(5,Math.abs(w)*2.2)).toFixed(2),'stroke-opacity':0.75}); l.append(s('title',null,'Weight '+w.toFixed(2))); g.append(l); };
+    for (let j=0;j<5;j++) for (let i=0;i<4;i++) line(L[0][i],L[1][j],net.W1[j][i]);
+    for (let j=0;j<5;j++) for (let i=0;i<5;i++) line(L[1][i],L[2][j],net.W2[j][i]);
+    for (let i=0;i<5;i++) line(L[2][i],L[3][0],net.W3[i]);
+    const names = ['Age','Systolic BP','Lactate','Symptom score'];
+    L[0].forEach((p,i)=>{ g.append(s('circle',{cx:p[0],cy:p[1],r:13,fill:'var(--surface)',stroke:'var(--ink)','stroke-width':1.5})); g.append(s('text',{x:p[0]-20,y:p[1]+4,'text-anchor':'end','font-size':13,fill:'var(--ink)'},names[i])); });
+    [f.h1,f.h2].forEach((acts,k)=> L[k+1].forEach((p,i)=>{ const a = acts[i]; g.append(s('circle',{cx:p[0],cy:p[1],r:13,fill:a>=0?'var(--accent)':'var(--signal)','fill-opacity':(0.15+0.85*Math.abs(a)).toFixed(2),stroke:'var(--ink)','stroke-width':1.2})); }));
+    const o = L[3][0];
+    g.append(s('circle',{cx:o[0],cy:o[1],r:26,fill:'var(--surface)',stroke:'var(--ink)','stroke-width':2}));
+    g.append(s('text',{x:o[0],y:o[1]+5,'text-anchor':'middle','font-size':15,'font-weight':700,fill:'var(--ink)','font-family':'var(--f-mono)'},f.o.toFixed(2)));
+    g.append(s('text',{x:o[0],y:o[1]+46,'text-anchor':'middle','font-size':12,fill:'var(--muted)'},'Risk score'));
+    g.append(s('text',{x:X[1],y:20,'text-anchor':'middle','font-size':12,fill:'var(--muted)'},'Hidden layer 1'));
+    g.append(s('text',{x:X[2],y:20,'text-anchor':'middle','font-size':12,fill:'var(--muted)'},'Hidden layer 2'));
+    svgWrap.innerHTML=''; svgWrap.append(g);
+    const zt = 0.045*(pt.age-65) - 0.035*(pt.sbp-115) + 0.7*(pt.lac-2.2) + 0.25*(pt.sc-5) - 0.6;
+    readout.innerHTML='';
+    readout.append(h('div',{class:'stat'},h('small',null,'Cases shown'),h('b',null,seen.toLocaleString('en-GB'))),
+      h('div',{class:'stat'},h('small',null,'Network says'),h('b',null,f.o.toFixed(2))),
+      h('div',{class:'stat'},h('small',null,'True risk (hidden)'),h('b',null,sig(zt).toFixed(2))),
+      h('div',{class:'stat'},h('small',null,'Weights (lines)'),h('b',null,'45')));
+    errWrap.innerHTML='';
+    errWrap.append(h('p',{class:'hint',style:'margin:10px 0 0'},'Average mistake across 600 cases (lower is better)'),
+      lineChart({xs:Math.max(2,hist.length), hgt:150, ymin:0, ymax:Math.max(1.2,...hist), yfmt:v=>v.toFixed(1), series:[{data:hist,color:'var(--accent)'}], xlabels:[[0,'start'],[Math.max(1,hist.length-1),seen.toLocaleString('en-GB')+' cases']]}));
+  }
+  init();
+  const ctl = h('div',{class:'ctls'},
+    slider('Age','n-age',20,95,1,pt.age,v=>v+' y',v=>{pt.age=v;draw();}),
+    slider('Systolic BP','n-sbp',70,180,1,pt.sbp,v=>v+' mmHg',v=>{pt.sbp=v;draw();}),
+    slider('Lactate','n-lac',0.5,8,0.1,pt.lac,v=>v.toFixed(1),v=>{pt.lac=v;draw();}),
+    slider('Symptom score','n-sc',0,10,1,pt.sc,v=>v+'/10',v=>{pt.sc=v;draw();}));
+  draw();
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: train a small network'),
+    h('p',{class:'hint'},'Teal lines push the risk up, amber lines push it down; thicker means the line counts for more. Untrained, the answer is guesswork. Press the buttons to show it labelled cases. Hover a line to see its number.'),
+    h('div',{class:'row',style:'margin-bottom:10px'}, h('button',{class:'btn primary',type:'button',onclick:()=>train(60)},'Show 60 cases'), h('button',{class:'btn',type:'button',onclick:()=>train(1200)},'Show 1,200 cases'), h('button',{class:'btn ghost',type:'button',onclick:()=>{init();draw();}},'Start again')),
+    svgWrap, h('div',{class:'cx',style:'margin-top:12px'}, h('div',null,h('p',{class:'hint',style:'margin-bottom:8px'},'Your patient'),ctl), h('div',null,readout,errWrap)),
+    h('p',{class:'note',style:'margin-top:12px'},'This picture has 45 lines. A model reading a chest radiograph has tens of millions (a standard image model such as ResNet-50 has about 25 million). Same idea, enormously more of it, and no person has ever inspected those numbers one by one.')));
+  main.append(check('network','What does "deep" in deep learning refer to?',
+    ['How hard the medical problem is','A network with many hidden layers','The amount of training data'],1,
+    'Deep simply means many hidden layers. "Hidden" only means they are neither the input nor the output; they are not hiding anything deliberately.'));
+  main.append(takeaway('You can read every weight, but no single weight means "consolidation" or "sepsis". That is the transparency you give up as models get bigger.'));
+}});
+
+/* ---------- 6. Interpretability + choosing ---------- */
+STATIONS.push({id:'choose', n:'06', title:'The bargain, and choosing a model', short:'Interpretability against flexibility',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 06 · Figure A.5 and the choosing guide'),
+    h('h2',null,'Further right is not better. It is a different bargain.'),
+    h('p',{class:'lede'},'Moving right along the spectrum buys subtlety and sells transparency. Explore the families, then choose a starting model for five clinical scenarios using two questions: what is the data, and what does the setting demand?')));
+  const FAM = [
+    ['Logistic regression','A clinical risk score. You can see every weight and say exactly why it gave its number.','Every step'],
+    ['Decision tree','Explicit if-then rules you could follow on paper.','Every step'],
+    ['Random forest','Hundreds of trees voting. A workhorse for tables of labs, vitals and coded history.','Hard to narrate'],
+    ['Support vector machine','Draws the best boundary between groups in many dimensions.','Hard to narrate'],
+    ['Neural network','Layers of weighted connections, as in Station 05.','Very little'],
+    ['Deep CNN','A deep network built to read images.','Where it looked, not why'],
+    ['Transformer / LLM','Very large networks for language that generate fluent text.','Almost nothing']];
+  let sel = 0;
+  const axis = h('div',{class:'svgwrap'}); const detail = h('div',{class:'note',style:'margin-top:10px'});
+  const famBtns = h('div',{class:'fam'});
+  function drawAxis(){
+    const g = s('svg',{viewBox:'0 0 640 92',width:'100%',role:'img','aria-label':'Spectrum from interpretable to flexible'});
+    g.append(s('line',{x1:30,x2:610,y1:46,y2:46,stroke:'var(--muted)','stroke-width':2}));
+    g.append(s('text',{x:30,y:84,'font-size':12,fill:'var(--good)','font-weight':700},'You can see why'));
+    g.append(s('text',{x:610,y:84,'text-anchor':'end','font-size':12,fill:'var(--signal)','font-weight':700},'Captures subtler patterns'));
+    FAM.forEach((f,i)=>{ const x = 40 + i*(560/6); const on = i===sel;
+      g.append(s('circle',{cx:x,cy:46,r:on?11:7,fill:on?'var(--accent)':'var(--surface)',stroke:'var(--accent)','stroke-width':2}));
+      g.append(s('text',{x,y: i%2?70:26,'text-anchor':'middle','font-size':11.5,fill:on?'var(--ink)':'var(--muted)','font-weight':on?700:400}, f[0].split(' ')[0]+(f[0].split(' ').length>1&&f[0].length<15?' '+f[0].split(' ')[1]:''))); });
+    axis.innerHTML=''; axis.append(g);
+    detail.innerHTML = `<b>${FAM[sel][0]}.</b> ${FAM[sel][1]} <span class="pill acc" style="margin-left:6px">Can you explain it? ${FAM[sel][2]}</span>`;
+    famBtns.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===sel)));
+  }
+  FAM.forEach((f,i)=> famBtns.append(h('button',{type:'button',onclick:()=>{sel=i;drawAxis();}},f[0])));
+  drawAxis();
+  main.append(h('section',{class:'panel'}, h('h3',null,'The spectrum'), h('p',{class:'hint'},'Choose a family to see what you can and cannot explain.'), famBtns, h('div',{style:'margin-top:10px'},axis), detail));
+
+  const ROWS = [['lr','Logistic regression or a decision tree'],['rf','Random forest or gradient boosting'],['cnn','Convolutional network (CNN)'],['llm','Language model, with a human checking the output'],['cl','Clustering']];
+  const SC = [
+    ['Predict 30-day readmission from coded data. The board must see the reasoning.','lr','Tables of numbers, and the reasoning must be visible: start with logistic regression.'],
+    ['Predict 30-day readmission from coded data. Accuracy comes first; explanation can be added later.','rf','Same data as above, different demand. A random forest or gradient boosting is the usual starting point for tables.'],
+    ['Sort retinal photographs into "refer" and "no referral".','cnn','Images point straight to a convolutional network.'],
+    ['Summarise free-text discharge letters.','llm','Free text points to a language model, and "with a human checking" is not optional.'],
+    ['Discover patient groups in a registry with no outcome labels.','cl','No labels at all: you are exploring, so clustering.']];
+  const scWrap = h('div',{class:'opts'});
+  let scDone = 0;
+  SC.forEach(([q,a,why],i)=>{
+    const fb = h('div',{style:'font-size:.88rem;grid-column:1/-1'});
+    const sl = h('select',{class:'sel',id:'sc'+i,'aria-label':'Starting model'}, h('option',{value:''},'Choose a starting family…'), ROWS.map(([v,t])=>h('option',{value:v},t)));
+    sl.onchange = () => { const ok = sl.value===a; fb.innerHTML = (ok?'<span class="pill good">Good start</span> ':'<span class="pill bad">Think again</span> ') + (ok?why:'Ask first: what kind of data is it? Then: must the reasoning be visible?'); };
+    scWrap.append(h('div',{class:'sortitem'}, h('span',null,q), sl, fb));
+  });
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: choose a starting model'), h('p',{class:'hint'},'The data type narrows the field. What the setting demands then picks the family. This gives a starting point a data scientist will argue with, and lets you argue back.'), scWrap,
+    h('p',{class:'note warn',style:'margin-top:12px'},'Rule of thumb: start with the simplest model that could work, and make the complex one prove it earns its opacity. On tables of clinical data it often cannot.')));
+  // 3am example
+  let hem = true;
+  const tam = h('div');
+  function draw3(){
+    const c = [['Age 84',0.9],['Sodium 128 mmol/L',hem?1.6:0.2],['Lives alone',0.5],['eGFR 48',0.3],['On 9 medicines',0.4],['Mobile with frame',0.2]];
+    const tot = c.reduce((a,x)=>a+x[1],-2.5); const p = sig(tot);
+    tam.innerHTML='';
+    tam.append(h('div',{class:'grid2'},
+      h('div',{class:'toolcard'}, h('h4',null,'Logistic regression'), h('p',null,'Shows what drives the score:'),
+        h('div',{class:'bars'}, c.map(([l,v])=>h('div',{class:'barrow'},h('span',null,l),h('div',{class:'track'},h('div',{class:'fill',style:`width:${v/1.7*100}%`})),h('output',null,'+'+v.toFixed(1))))),
+        h('p',{style:'margin-top:6px'}, h('b',{class:'mono',style:'color:var(--ink)'},'Risk '+p.toFixed(2)))),
+      h('div',{class:'toolcard'}, h('h4',null,'Gradient-boosted model'), h('p',null,'Two points better on the area under the curve in the paper. Shows:'),
+        h('div',{class:'stat',style:'margin-top:8px'},h('small',null,'Risk'),h('b',null,(hem?0.71:0.38).toFixed(2))), h('p',null,'No reasons given.'))));
+  }
+  draw3();
+  main.append(h('section',{class:'panel'}, h('h3',null,'Three in the morning: a discharge-risk score'),
+    h('p',{class:'hint'},'A foundation doctor sees a high risk score. She knows the sodium sample was haemolysed. Toggle the sample to see what each model lets her do.'),
+    h('div',{class:'row',style:'margin-bottom:12px'}, seg([[true,'Haemolysed sodium in the record'],[false,'Repeat sodium 137']], true, v=>{hem=v;draw3();}, 'Sodium result')), tam));
+  main.append(check('choose','At 3 a.m. the junior doctor wants to override the high score because the sodium was haemolysed. Which model lets her do that defensibly?',
+    ['Logistic regression with visible weights','The boosted model, because it scored higher in the paper','Either one: a score is a score'],0,
+    'She can see the score is driven mostly by age and sodium, notice the sodium was spurious, and record why she overrode it. The boosted model offers a number and no argument. Usability by a tired, responsible human is the right clinical framing.'));
+  main.append(takeaway('Where on this line would you want a tool that decides who gets an intensive care bed? There is no single right answer, and that argument is the decision your organisation has to own.'));
+}});
+
+/* ---------- 7. CNN ---------- */
+STATIONS.push({id:'cnn', n:'07', title:'How a network reads a scan', short:'Edges, textures, structures and heat maps',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 07 · Convolutional networks'),
+    h('h2',null,'Nobody told it what an edge or a nodule is'),
+    h('p',{class:'lede'},'Step through the layers of an image network on a simulated chest film. Then compare an honest model with one that learned a shortcut, and see why a heat map shows where the model looked, not why.')));
+  const N = 240;
+  const base = new Float32Array(N*N);
+  const r = mulberry32(3);
+  let showNodule = true, showMarker = true, model = 'honest', layer = 0;
+  function build(){
+    for (let y=0;y<N;y++) for (let x=0;x<N;x++){
+      let v = 0.06;
+      const body = ((x-120)/108)**2 + ((y-140)/125)**2; if (body<1) v = 0.55;
+      const lL = ((x-80)/40)**2 + ((y-118)/72)**2, rL = ((x-160)/40)**2 + ((y-118)/72)**2;
+      if (lL<1 || rL<1) v = 0.17 + 0.05*Math.max(0, 1-Math.min(lL,rL));
+      if (Math.abs(x-120)<14 && y>30 && y<190 && body<1) v = 0.62;
+      const heart = ((x-138)/42)**2 + ((y-168)/34)**2; if (heart<1) v = Math.max(v,0.6);
+      if (body<1 && (lL<1.05||rL<1.05)){ for (let k=0;k<8;k++){ const cy = 58+k*19 + 0.0042*(x-120)**2; if (Math.abs(y-cy)<2.2) v += 0.16; } }
+      v += (r()-0.5)*0.04;
+      base[y*N+x] = v;
+    }
+  }
+  build();
+  function getImg(){
+    const im = Float32Array.from(base);
+    if (showNodule) for (let y=60;y<110;y++) for (let x=50;x<100;x++){ const d=((x-72)**2+(y-84)**2)/(2*5.5**2); im[y*N+x] += 0.45*Math.exp(-d); }
+    if (showMarker){ const c = document.createElement('canvas'); c.width=c.height=N; const cx=c.getContext('2d'); cx.fillStyle='#fff'; cx.font='bold 26px Arial, sans-serif'; cx.fillText('R',14,36);
+      const d = cx.getImageData(0,0,N,N).data; for (let i=0;i<N*N;i++) if (d[i*4]>100) im[i] = 0.95; }
+    return im;
+  }
+  function blur(src, rad){
+    const tmp = new Float32Array(N*N), out = new Float32Array(N*N);
+    for (let y=0;y<N;y++){ let acc=0; for (let x=-rad;x<=rad;x++) acc+=src[y*N+clamp(x,0,N-1)];
+      for (let x=0;x<N;x++){ tmp[y*N+x]=acc/(2*rad+1); acc += src[y*N+clamp(x+rad+1,0,N-1)] - src[y*N+clamp(x-rad,0,N-1)]; } }
+    for (let x=0;x<N;x++){ let acc=0; for (let y=-rad;y<=rad;y++) acc+=tmp[clamp(y,0,N-1)*N+x];
+      for (let y=0;y<N;y++){ out[y*N+x]=acc/(2*rad+1); acc += tmp[clamp(y+rad+1,0,N-1)*N+x] - tmp[clamp(y-rad,0,N-1)*N+x]; } }
+    return out;
+  }
+  function normalise(a){ let mn=Infinity,mx=-Infinity; for (const v of a){ if(v<mn)mn=v; if(v>mx)mx=v; } const o = new Float32Array(a.length); for (let i=0;i<a.length;i++) o[i]=(a[i]-mn)/(mx-mn||1); return o; }
+  function sobel(a){ const o = new Float32Array(N*N); for (let y=1;y<N-1;y++) for (let x=1;x<N-1;x++){ const g=(i,j)=>a[(y+j)*N+(x+i)];
+    const gx = -g(-1,-1)-2*g(-1,0)-g(-1,1)+g(1,-1)+2*g(1,0)+g(1,1); const gy = -g(-1,-1)-2*g(0,-1)-g(1,-1)+g(-1,1)+2*g(0,1)+g(1,1); o[y*N+x]=Math.hypot(gx,gy); } return o; }
+  const cv = h('canvas',{class:'film',width:N,height:N,role:'img','aria-label':'Simulated chest radiograph with the selected network layer shown'});
+  const pbox = h('div',{class:'stats'}); const caption = h('div',{class:'note'});
+  const LAYERS = [
+    ['Pixels','The image arrives as a grid of brightness values. Nothing more.'],
+    ['Layer 1: edges','Early layers respond to sharp changes in brightness: rib margins, the diaphragm, the heart border.'],
+    ['Layer 2: textures','Next layers combine edges into textures and simple shapes.'],
+    ['Layer 3: structures','Deeper layers combine those into structures that matter clinically, such as a rounded opacity.'],
+    ['Output and heat map','A classifier turns all of that into a probability, with a heat map of where activation was strongest.']];
+  function draw(){
+    const im = getImg(); let show;
+    if (layer===0 || layer===4) show = im;
+    else if (layer===1) show = normalise(sobel(im)).map(v=>Math.min(1,v*1.8));
+    else if (layer===2){ const b = blur(im,4); const d = im.map((v,i)=>Math.abs(v-b[i])); show = normalise(blur(d,2)).map(v=>Math.min(1,v*1.6)); }
+    else { const a = blur(im,2), b = blur(im,8); show = normalise(a.map((v,i)=>Math.max(0,v-b[i]))).map(v=>Math.min(1,v*1.4)); }
+    const ctx = cv.getContext('2d'); const id = ctx.createImageData(N,N);
+    const accentRGB = layer===0||layer===4 ? null : [77,182,172];
+    const hx = model==='honest' ? 72 : 22, hy = model==='honest' ? 84 : 26;
+    const heatOn = layer===4 && ((model==='honest' && showNodule) || (model==='shortcut' && showMarker));
+    for (let i=0;i<N*N;i++){
+      const v = clamp(show[i],0,1); let R,G,B;
+      if (accentRGB){ R = v*accentRGB[0]+ (1-v)*8; G = v*accentRGB[1] + (1-v)*14; B = v*accentRGB[2] + (1-v)*16; }
+      else { R=G=B=v*255; }
+      if (heatOn){ const x=i%N, y=(i/N)|0; const w = Math.exp(-((x-hx)**2+(y-hy)**2)/(2*16**2)); R = R*(1-0.65*w)+255*0.65*w; G = G*(1-0.65*w)+120*0.65*w; B = B*(1-0.65*w)+20*0.65*w; }
+      id.data[i*4]=R; id.data[i*4+1]=G; id.data[i*4+2]=B; id.data[i*4+3]=255;
+    }
+    ctx.putImageData(id,0,0);
+    let p;
+    if (model==='honest') p = showNodule ? 0.87 : 0.08; else p = showMarker ? 0.85 : 0.12;
+    pbox.innerHTML='';
+    pbox.append(h('div',{class:'stat'},h('small',null,'Probability of nodule'),h('b',null, layer===4 ? p.toFixed(2) : '—')),
+      h('div',{class:'stat'},h('small',null,'Nodule in this film'),h('b',null, showNodule?'Yes':'No')));
+    let extra = '';
+    if (layer===4){
+      if (model==='shortcut') extra = showMarker ? '<br><b>The heat map sits on the laterality marker, not the lung.</b> In its training data the marker style happened to match the sicker site. Remove the nodule: it still says 0.85.' : '<br><b>Marker hidden: the shortcut model collapses</b>, even if a nodule is present.';
+      else extra = showNodule ? '<br>Heat map over the right upper zone, where the nodule is.' : '<br>No nodule, low probability.';
+    }
+    caption.innerHTML = `<b>${LAYERS[layer][0]}.</b> ${LAYERS[layer][1]}${extra}`;
+  }
+  const stepBtns = h('div',{class:'steps'});
+  LAYERS.forEach((l,i)=> stepBtns.append(h('button',{class:'btn'+(i===0?' primary':''),type:'button',onclick:(e)=>{layer=i; stepBtns.querySelectorAll('button').forEach((b,j)=>b.classList.toggle('primary',j===i)); draw();}},l[0])));
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: walk through the layers'),
+    h('p',{class:'hint'},'The film is drawn by the computer for teaching. Layers 1 to 3 are real image filters of the kind early network layers learn.'),
+    h('div',{class:'cx'}, h('div',null,cv), h('div',{style:'display:flex;flex-direction:column;gap:12px;min-width:0'}, stepBtns,
+      h('div',{class:'ctls'},
+        h('div',{class:'row'}, h('span',{style:'font-size:.88rem;min-width:70px'},'Model'), seg([['honest','Honest model'],['shortcut','Shortcut model']],'honest',v=>{model=v;draw();},'Model')),
+        h('div',{class:'row'}, h('span',{style:'font-size:.88rem;min-width:70px'},'Nodule'), seg([[true,'Present'],[false,'Removed']],true,v=>{showNodule=v;draw();},'Nodule')),
+        h('div',{class:'row'}, h('span',{style:'font-size:.88rem;min-width:70px'},'Marker'), seg([[true,'Shown'],[false,'Hidden']],true,v=>{showMarker=v;draw();},'Laterality marker'))),
+      pbox, caption))));
+  draw(); onTheme(draw);
+  main.append(h('p',{class:'note warn'},'Real models have been caught keying on chest drains, laterality markers and which hospital\'s scanner produced the film. One well-known pneumonia model partly learned to recognise the hospital, because disease prevalence differed by site. It validated superbly and performed poorly everywhere else.'));
+  main.append(check('cnn','What does a heat map on an AI-read scan show?',
+    ['Where the model\'s activation was strongest','Why the model reached its conclusion','That the finding is real'],0,
+    'A heat map shows where the model looked. That can be a lesion, a drain, a marker or an artefact. It is a hint for a person, never a justification.'));
+  main.append(takeaway('Heat maps are not reassurance. Look at what is under the heat, and ask whether the model was tested on films from other sites and scanners.'));
+}});
+
+/* ---------- 8. Ensembles ---------- */
+STATIONS.push({id:'ensemble', n:'08', title:'Ensembles: an MDT of models', short:'Combine, disagree, refer',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 08 · Ensembles'),
+    h('h2',null,'Several models, one answer: a multidisciplinary meeting'),
+    h('p',{class:'lede'},'Three differently trained readers look at the same scan and a combiner reaches one decision. Adjust each model\'s opinion and see when disagreement should send the case to a human. Then test what happens when the three models are not really different.')));
+  const st = {a:0.91, b:0.62, c:0.79, wa:1, wb:1, wc:1, method:'avg', spread:0.2};
+  const out = h('div');
+  function combine(){
+    const ps=[st.a,st.b,st.c], ws=[st.wa,st.wb,st.wc];
+    if (st.method==='avg') return (ps[0]+ps[1]+ps[2])/3;
+    if (st.method==='weighted'){ const W = ws.reduce((x,y)=>x+y,0)||1; return ps.reduce((x,p,i)=>x+p*ws[i],0)/W; }
+    return sig(2.2*(ps[0]-0.5)+1.4*(ps[1]-0.5)+2.0*(ps[2]-0.5)+ (Math.max(...ps)-Math.min(...ps)>0.25?-0.2:0) );
+  }
+  function draw(){
+    const p = combine(); const spread = Math.max(st.a,st.b,st.c)-Math.min(st.a,st.b,st.c);
+    let dec, cls;
+    if (spread > st.spread){ dec='Send to a human reader: the models disagree'; cls='warn'; }
+    else if (p>=0.5){ dec='Recall for further imaging'; cls='bad'; } else { dec='Clear: no recall'; cls='good'; }
+    out.innerHTML='';
+    out.append(h('div',{class:'stats'}, h('div',{class:'stat'},h('small',null,'Combined probability'),h('b',null,p.toFixed(2))),
+      h('div',{class:'stat'},h('small',null,'Spread between models'),h('b',null,spread.toFixed(2)))),
+      h('p',{style:'margin-top:10px'}, h('span',{class:'pill '+cls,style:'font-size:.95rem;padding:6px 14px'}, dec)));
+  }
+  const wRows = h('div',{class:'ctls'});
+  function wSliders(){ wRows.innerHTML=''; if (st.method!=='weighted') return;
+    wRows.append(h('p',{class:'hint',style:'margin:6px 0 0'},'Trust given to each model (earned from past performance)'),
+      slider('Trust in A','e-wa',0,3,0.1,st.wa,v=>v.toFixed(1),v=>{st.wa=v;draw();}),
+      slider('Trust in B','e-wb',0,3,0.1,st.wb,v=>v.toFixed(1),v=>{st.wb=v;draw();}),
+      slider('Trust in C','e-wc',0,3,0.1,st.wc,v=>v.toFixed(1),v=>{st.wc=v;draw();})); }
+  const ctl = h('div',{class:'ctls'},
+    slider('Model A (CNN)','e-a',0,1,0.01,st.a,v=>v.toFixed(2),v=>{st.a=v;draw();}),
+    slider('Model B (other design)','e-b',0,1,0.01,st.b,v=>v.toFixed(2),v=>{st.b=v;draw();}),
+    slider('Model C (other data)','e-c',0,1,0.01,st.c,v=>v.toFixed(2),v=>{st.c=v;draw();}),
+    slider('Refer if spread over','e-s',0.05,0.6,0.01,st.spread,v=>v.toFixed(2),v=>{st.spread=v;draw();}),
+    h('div',{class:'row'}, h('span',{style:'font-size:.88rem'},'Combiner'), seg([['avg','Average'],['weighted','Weighted vote'],['stack','Small model on top']],'avg',v=>{st.method=v;wSliders();draw();},'Combiner')), wRows);
+  draw();
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: one scan, three models'), h('p',{class:'hint'},'The starting values are 0.91, 0.62 and 0.79. Their average is 0.77, but model B is well out of step, and that disagreement is information.'),
+    h('div',{class:'cx'}, ctl, out)));
+  // diversity experiment
+  const dvOut = h('div');
+  function runDiv(){
+    const rr = mulberry32(2024); const n = 2000; let single=0, div=0, same=0;
+    for (let i=0;i<n;i++){
+      const e1 = rr()<0.15;
+      const ind = [e1, rr()<0.15, rr()<0.15];
+      const shared = [e1, rr()<0.88 ? e1 : rr()<0.15, rr()<0.88 ? e1 : rr()<0.15];
+      single += !e1; div += (ind.filter(x=>!x).length>=2); same += (shared.filter(x=>!x).length>=2);
+    }
+    dvOut.innerHTML='';
+    const rows = [['One model alone',single/n],['Three genuinely different models',div/n],['Three near-identical models (same data, same scanner)',same/n]];
+    dvOut.append(h('div',{class:'bars'}, rows.map(([l,v])=>h('div',{class:'barrow'},h('span',null,l),h('div',{class:'track'},h('div',{class:'fill',style:`width:${(v-0.7)/0.3*100}%`})),h('output',null,pct(v,1))))),
+      h('p',{class:'note',style:'margin-top:10px'},'Each model alone is right 85% of the time. Different models make different mistakes, so a majority vote cancels many of them out. Near-identical models make the same mistakes together, confidently, and the ensemble buys almost nothing except a slower system.'));
+    window.__div = {single:single/n, div:div/n, same:same/n};
+  }
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: does diversity matter?'), h('p',{class:'hint'},'Run 2,000 simulated scans through two kinds of three-model ensemble, each using a majority vote. Bars start at 70%.'),
+    h('button',{class:'btn primary',type:'button',onclick:runDiv},'Run 2,000 scans'), h('div',{style:'margin-top:12px'},dvOut)));
+  main.append(check('ensemble','Three models score a scan 0.91, 0.62 and 0.79. What should a well-designed screening system do?',
+    ['Recall automatically, because the average 0.77 is above 0.5','Send the case to a human reader, because the models disagree','Ignore model B as an outlier'],1,
+    'The spread is itself the signal. In a well-designed workflow the ensemble\'s real output is a triage decision, not just a number.'));
+  main.append(takeaway('Ask the supplier whether the quoted performance is for one model or an ensemble, and how the members differ. A vague answer is an answer.'));
+}});
+
+/* ---------- 9. Evidence ---------- */
+STATIONS.push({id:'evidence', n:'09', title:'Reading the evidence', short:'Sensitivity, specificity, predictive value',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 09 · Figure A.6'),
+    h('h2',null,'Ninety per cent accurate, and two in three flags are wrong'),
+    h('p',{class:'lede'},'One thousand patients, each shown as a square. Set how common the disease is and how good the model is, and see what proportion of flagged patients truly have the disease. Guess first.')));
+  const st = {prev:0.05, sens:0.9, spec:0.9};
+  const cv = h('canvas',{role:'img','aria-label':'1000 squares coloured by true positive, missed, false alarm and correctly cleared',style:'width:100%;max-width:560px;aspect-ratio:40/25'});
+  const cm = h('div'); const stats = h('div',{class:'stats'});
+  function counts(){ const D = Math.round(1000*st.prev); const tp = Math.round(D*st.sens); const fn = D-tp; const H = 1000-D; const tn = Math.round(H*st.spec); const fp = H-tn; return {D,tp,fn,fp,tn}; }
+  function drawWaffle(){
+    const c = counts(); const dpr = window.devicePixelRatio||1; const cols=40, rows=25; const W = 560, Hh = 350; const cell = W/cols;
+    cv.width = W*dpr; cv.height = Hh*dpr; const ctx = cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,Hh);
+    const cols_ = {tp:cssv('--accent'), fn:cssv('--accent-soft'), fp:cssv('--signal'), tn:cssv('--surface-2')};
+    const seq = []; ['tp','fn','fp','tn'].forEach(k=>{ for(let i=0;i<c[k];i++) seq.push(k); });
+    // column-major so each group is a block
+    seq.forEach((k,i)=>{ const col = Math.floor(i/rows), row = i%rows; ctx.fillStyle = cols_[k]; ctx.fillRect(col*cell+1, row*(Hh/rows)+1, cell-2, Hh/rows-2);
+      if (k==='fn'){ ctx.strokeStyle = cols_.tp; ctx.lineWidth=1.2; ctx.strokeRect(col*cell+1.6, row*(Hh/rows)+1.6, cell-3.2, Hh/rows-3.2); } });
+  }
+  function draw(){
+    const c = counts(); const acc = (c.tp+c.tn)/1000, ppv = c.tp/((c.tp+c.fp)||1), npv = c.tn/((c.tn+c.fn)||1);
+    drawWaffle();
+    cm.innerHTML='';
+    cm.append(h('div',{class:'cm'}, h('div',{class:'h'}), h('div',{class:'h'},'Has disease'), h('div',{class:'h'},'Does not'),
+      h('div',{class:'h'},'Flagged'), h('div',{class:'tp'}, h('b',{class:'mono'},c.tp),' caught'), h('div',{class:'fp'}, h('b',{class:'mono'},c.fp),' false alarms'),
+      h('div',{class:'h'},'Cleared'), h('div',{class:'fn'}, h('b',{class:'mono'},c.fn),' missed'), h('div',{class:'tn'}, h('b',{class:'mono'},c.tn),' correctly cleared')));
+    stats.innerHTML='';
+    const sh = revealed;
+    stats.append(h('div',{class:'stat'},h('small',null,'Sensitivity'),h('b',null,pct(st.sens))),
+      h('div',{class:'stat'},h('small',null,'Specificity'),h('b',null,pct(st.spec))),
+      h('div',{class:'stat'},h('small',null,'Accuracy'),h('b',null,pct(acc,1))),
+      h('div',{class:'stat',style:'background:var(--signal-soft)'},h('small',null,'Flagged who truly have it (PPV)'),h('b',null, sh?pct(ppv,1):'?')),
+      h('div',{class:'stat'},h('small',null,'Cleared who are truly well (NPV)'),h('b',null, sh?pct(npv,1):'—')));
+    if (sh){ const gap = Math.round(guess.input.value) - Math.round(ppv*100);
+      verdict.innerHTML = `You guessed <b>${guess.input.value}%</b>. The real figure is <b>${pct(ppv,1)}</b>: ${c.tp} true cases among ${c.tp+c.fp} flagged. ` + (Math.abs(gap)>15 ? 'Most people guess far too high. The gap is the lesson: at low prevalence the false alarms from the large healthy group swamp the true cases.' : 'Close. You have the instinct most people lack.'); verdict.hidden=false; }
+    window.__ev = {c,acc,ppv,npv};
+  }
+  let revealed = false;
+  const verdict = h('div',{class:'note warn',hidden:true});
+  const guess = slider('Your guess','ev-g',0,100,1,75,v=>v+'%',null);
+  const reveal = h('button',{class:'btn primary',type:'button',onclick:()=>{revealed=true;draw();}},'Reveal');
+  const sl = {
+    prev: slider('Prevalence','ev-p',0.5,50,0.5,st.prev*100,v=>v.toFixed(1)+'%',v=>{st.prev=v/100;draw();}),
+    sens: slider('Sensitivity','ev-se',0,100,1,st.sens*100,v=>v+'%',v=>{st.sens=v/100;draw();}),
+    spec: slider('Specificity','ev-sp',50,100,1,st.spec*100,v=>v+'%',v=>{st.spec=v/100;draw();})};
+  function preset(p,se,sp){ st.prev=p; st.sens=se; st.spec=sp; sl.prev.input.value=p*100; sl.sens.input.value=se*100; sl.spec.input.value=sp*100; Object.values(sl).forEach(x=>{const f=x.update; x.querySelector('output').textContent = x===sl.prev?(p*100).toFixed(1)+'%': x===sl.sens? Math.round(se*100)+'%':Math.round(sp*100)+'%';}); draw(); }
+  const presets = h('div',{class:'row'},
+    h('button',{class:'btn',type:'button',onclick:()=>preset(0.05,0.9,0.9)},'Screening, 5%'),
+    h('button',{class:'btn',type:'button',onclick:()=>{preset(0.30,0.9,0.9); revealed=true; draw();}},'Symptomatic clinic, 30%'),
+    h('button',{class:'btn',type:'button',onclick:()=>{preset(0.01,0,1); revealed=true; draw();}},'Lazy model: calls everyone negative'));
+  draw(); onTheme(drawWaffle);
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: one thousand patients'),
+    h('p',{class:'hint'},'Start with the screening cohort: 5% prevalence, 90% sensitivity, 90% specificity. Before you reveal: of everyone the model flags, what proportion truly has the disease?'),
+    h('div',{class:'cx'}, h('div',{style:'min-width:0'}, cv, legend([['var(--accent)','Caught'],['var(--accent-soft)','Missed'],['var(--signal)','False alarm'],['var(--surface-2)','Correctly cleared']]), h('div',{style:'margin-top:12px'},cm)),
+      h('div',{style:'display:flex;flex-direction:column;gap:12px;min-width:0'}, h('div',{class:'ctls'}, guess), h('div',{class:'row'},reveal), verdict, h('div',{class:'ctls'}, sl.prev, sl.sens, sl.spec), presets, stats))));
+  // calibration
+  let calib = 'good'; const cw = h('div',{class:'svgwrap'}); const cn = h('p',{class:'note',style:'margin-top:8px'});
+  function drawCal(){
+    const bins = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9];
+    const obs = bins.map(b => calib==='good' ? b+ (b-0.5)*0.02 : clamp(0.5+(b-0.5)*0.45,0,1));
+    const g = s('svg',{viewBox:'0 0 360 300',width:'100%',style:'max-width:420px',role:'img','aria-label':'Calibration plot'});
+    const X = v=>40+v*300, Y = v=>270-v*250;
+    for (let k=0;k<=4;k++){ const v=k/4; g.append(s('line',{x1:X(0),x2:X(1),y1:Y(v),y2:Y(v),stroke:'var(--line)'})); g.append(s('text',{x:34,y:Y(v)+4,'text-anchor':'end','font-size':11,fill:'var(--muted)'},pct(v))); g.append(s('text',{x:X(v),y:292,'text-anchor':'middle','font-size':11,fill:'var(--muted)'},pct(v))); }
+    g.append(s('line',{x1:X(0),y1:Y(0),x2:X(1),y2:Y(1),stroke:'var(--muted)','stroke-dasharray':'5 5'}));
+    g.append(s('polyline',{points:bins.map((b,i)=>X(b)+','+Y(obs[i])).join(' '),fill:'none',stroke:'var(--accent)','stroke-width':2.5}));
+    bins.forEach((b,i)=>g.append(s('circle',{cx:X(b),cy:Y(obs[i]),r:4.5,fill:'var(--accent)'})));
+    g.append(s('text',{x:X(0.02),y:Y(0.95),'font-size':11,fill:'var(--muted)'},'Actually happened'));
+    cw.innerHTML=''; cw.append(g, h('p',{class:'hint',style:'margin:2px 0 0'},'Across: the risk the model stated. Up: how often the event really happened. The dashed line is perfect honesty.'));
+    cn.innerHTML = calib==='good' ? 'When it says 70%, the event happens about 70% of the time. Its numbers can be acted on.' : '<b>Over-confident.</b> When it says 90%, the event happens about 68% of the time; when it says 10%, about 32%. It may still separate cases well (a good area under the curve), but its probabilities are dangerous to act on for anticoagulation, surgical risk or escalation.';
+  }
+  drawCal();
+  main.append(h('section',{class:'panel'}, h('h3',null,'Calibration: are its probabilities honest?'), h('p',{class:'hint'},'A model can rank patients well and still give misleading percentages.'),
+    seg([['good','Well calibrated'],['over','Over-confident']],'good',v=>{calib=v;drawCal();},'Calibration'), h('div',{style:'margin-top:10px'},cw), cn));
+  main.append(check('evidence','A model with 90% sensitivity and 90% specificity is used where 5% of patients have the disease. Of those it flags, roughly how many truly have it?',
+    ['About 90%','About 75%','About a third'],2,
+    '45 true positives among 140 flagged is 32%. The same model in a clinic with 30% prevalence reaches about 79%. Identical model, transformed usefulness: "validated" must always mean "validated on whom".'));
+  main.append(takeaway('Do not ask for accuracy or the area under the curve. Ask what proportion of flagged patients truly have the condition, at your prevalence.'));
+}});
+
+/* ---------- 10. LLM ---------- */
+STATIONS.push({id:'llm', n:'10', title:'Generative AI and LLMs', short:'Fluent, confident and sometimes wrong',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 10 · Figure A.7'),
+    h('h2',null,'It predicts likely words. It does not look anything up.'),
+    h('p',{class:'lede'},'Generate a sentence one word at a time, exactly as a large language model does. Then ask it for evidence and check what comes back.')));
+  const stg = h('div',{class:'grid3'});
+  [['1. Pre-training','Self-supervised','Predicts hidden words in a vast amount of text, so the text supplies its own answers.'],
+   ['2. Fine-tuning','Supervised','Learns from examples of good answers written by people.'],
+   ['3. Alignment (RLHF)','Reinforcement learning','People rank its answers, and it is rewarded for the ones they preferred.']].forEach(([a,b,c])=>stg.append(h('div',{class:'toolcard'},h('h4',null,a),h('span',{class:'pill acc',style:'align-self:flex-start'},b),h('p',null,c))));
+  main.append(h('section',{class:'panel'}, h('h3',null,'How it is built'), h('p',{class:'hint'},'Three stages, three kinds of learning, one deep generative network. None of the three stages checks whether an answer is true.'), stg));
+  const TREE = {
+    '':[['intravenous',0.31],['antibiotics',0.24],['oral',0.14],['a',0.11],['low-molecular-weight',0.08],['warfarin',0.06],['regular',0.04],['the',0.02]],
+    'intravenous':[['antibiotics',0.46],['fluids',0.30],['co-amoxiclav',0.12],['furosemide',0.08],['insulin',0.04]],
+    'oral':[['antibiotics',0.38],['prednisolone',0.22],['amoxicillin',0.18],['steroids',0.14],['iron',0.08]],
+    'a':[['course',0.42],['trial',0.20],['regimen',0.16],['proton',0.12],['statin',0.10]],
+    'low-molecular-weight':[['heparin',0.97],['dextran',0.03]],
+    'regular':[['analgesia',0.48],['paracetamol',0.30],['nebulisers',0.22]],
+    'the':[['sepsis',0.45],['heart-failure',0.30],['stroke',0.25]],
+    'course':[['of',0.95],['for',0.05]], 'trial':[['of',0.9],['dose',0.1]], 'regimen':[['for',0.6],['of',0.4]], 'proton':[['pump',0.99],['beam',0.01]],
+    'sepsis':[['pathway',0.9],['bundle',0.1]], 'heart-failure':[['pathway',0.8],['bundle',0.2]], 'stroke':[['pathway',0.9],['bundle',0.1]],
+    'of':[['antibiotics',0.5],['steroids',0.3],['intravenous',0.2]], 'for':[['sepsis',0.6],['pneumonia',0.4]], 'pump':[['inhibitor',0.98],['therapy',0.02]],
+    'warfarin':[['for',0.55],['.',0.45]], 'dose':[['.',1]]
+  };
+  let words = [], temp = 1.0;
+  const tokEl = h('div',{class:'tokens'}); const barsEl = h('div',{class:'bars'});
+  function dist(){ const last = words.length ? words[words.length-1] : ''; let d = TREE[last]; if (!d || words.length>=5) d = [['.',0.62],['and',0.2],['overnight',0.18]];
+    const w = d.map(([t,p])=>[t, Math.pow(p, 1/temp)]); const Z = w.reduce((a,x)=>a+x[1],0); return w.map(([t,p])=>[t,p/Z]); }
+  function draw(){
+    tokEl.innerHTML=''; tokEl.append(h('span',{style:'color:var(--muted)'},'The patient was commenced on'), ...words.map(w=>h('span',{style:'color:var(--accent);font-weight:600'},w)));
+    const ended = words[words.length-1]==='.';
+    barsEl.innerHTML='';
+    if (!ended) dist().forEach(([t,p])=> barsEl.append(h('div',{class:'barrow'},h('span',{class:'mono'},t),h('div',{class:'track'},h('div',{class:'fill',style:`width:${p*100}%`})),h('output',null,pct(p)))));
+    else barsEl.append(h('p',{class:'note'},'Sentence complete. It reads fluently, and nothing was checked against the notes, a formulary or the patient.'));
+    nextBtn.disabled = ended;
+  }
+  function pick(){ const d = dist(); let u = Math.random(), t = d[d.length-1][0]; for (const [w,p] of d){ if ((u-=p) <= 0){ t = w; break; } } words.push(t); draw(); }
+  const nextBtn = h('button',{class:'btn primary',type:'button',onclick:pick},'Pick the next word');
+  const tempSl = slider('Randomness','l-t',0.2,2,0.1,1,v=>v.toFixed(1),v=>{temp=v;draw();});
+  draw();
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: the next word'),
+    h('p',{class:'hint'},'Before you press anything, finish the sentence yourself. Whatever word you thought of, you just did what the model does: rank likely next words and pick one, then repeat. Low randomness always picks the favourite; high randomness spreads the choice.'),
+    tokEl, h('div',{class:'row',style:'margin:12px 0'}, nextBtn, h('button',{class:'btn ghost',type:'button',onclick:()=>{words=[];draw();}},'Start again')), tempSl, h('div',{style:'margin-top:12px'},barsEl)));
+  const citeOut = h('div',{class:'chat',style:'max-height:none'});
+  let citeStage = 0;
+  const citeBtn = h('button',{class:'btn primary',type:'button'},'Ask for the evidence');
+  citeBtn.onclick = () => {
+    if (citeStage===0){
+      citeOut.append(h('div',{class:'msg you'},'What is the evidence for starting co-amoxiclav here?'),
+        h('div',{class:'msg them'},'Early broad-spectrum cover is supported by a randomised trial showing a 23% reduction in 30-day mortality (Hartwell J, Okonjo P, Lindqvist M. Early co-amoxiclav in community sepsis. Journal of Acute Clinical Therapeutics. 2019;14(3):212–219).'));
+      citeBtn.textContent = 'Check the citation'; citeStage = 1;
+    } else if (citeStage===1){
+      citeOut.append(h('div',{class:'msg them',style:'background:var(--bad-soft)'}, h('b',null,'Search result: no such paper.'),' The authors, title, journal and figures above were invented for this teaching demonstration, just as a model can invent them. A plausible citation is exactly what the pattern predicts; nothing in the model checks that it exists.'));
+      citeBtn.textContent = 'Done'; citeBtn.disabled = true; citeStage = 2;
+    }
+  };
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: ask it for evidence'), h('p',{class:'hint'},'Clinicians instinctively trust a well-formatted reference. Watch that instinct get tested.'), citeOut, h('div',{class:'row',style:'margin-top:10px'},citeBtn)));
+  main.append(check('llm','Does the human-feedback stage make a large language model truthful?',
+    ['Yes, people check every answer','No. It rewards what people preferred, which is not the same as what is true','Only for medical questions'],1,
+    'Raters prefer confident, well-organised, plausible answers. That can reward fluent falsehood. Grounding the model in retrieved documents reduces hallucination; nothing removes it. Design the workflow so a competent person reads the output before it matters.'));
+  main.append(takeaway('An LLM is a strong drafting aid where a clinician reads the output anyway, such as a clinic letter. It is not a source of clinical truth. Fluency is not accuracy.'));
+}});
+
+/* ---------- 11. Supplier interview ---------- */
+STATIONS.push({id:'supplier', n:'11', title:'Interview the supplier', short:'Five questions for any tool',
+render(main){
+  main.append(h('div',{class:'st-head'}, h('div',{class:'eyebrow'},'Station 11 · Putting it together'),
+    h('h2',null,'A supplier wants to sell you a chest film triage tool'),
+    h('p',{class:'lede'},'You have ten minutes with the account manager for "ClearView Triage", a fictional product. Choose your questions, listen to the answers, then make a recommendation to your clinical director.')));
+  const Q = [
+    {k:1, q:'What was it trained on, and were those patients like ours?', a:'Around 180,000 radiographs from two large teaching hospitals in the United States, collected 2014 to 2018.', flag:'Different population, era and equipment from ours.'},
+    {k:2, q:'Who assigned the labels, and how reliably?', a:'Each film was labelled by one radiologist from the original report. We did not measure agreement between readers.', flag:'Single reader, no agreement measured: the labels cap the model.'},
+    {k:3, q:'Was it validated on genuinely independent data?', a:'Yes, on a held-out 20% of the same collection.', flag:'Same sites, same period, same scanners. Not independent.'},
+    {k:4, q:'What is the predictive value at our prevalence?', a:'Our headline accuracy is 94%. We would need your data to work out the predictive value.', flag:'They cannot tell you what proportion of flags will be real here.'},
+    {k:5, q:'Who monitors it after go-live, and what triggers a review?', a:'Monitoring is the hospital\'s responsibility. We release a new version each year.', flag:'Nobody owns stage six unless you do.'},
+    {k:0, q:'Is it powered by the latest AI?', a:'Absolutely. It uses a state-of-the-art deep learning architecture.', weak:'Tells you nothing about whether it works for your patients.'},
+    {k:0, q:'How accurate is it?', a:'94% accurate in our validation study.', weak:'Accuracy alone is almost meaningless without prevalence.'},
+    {k:0, q:'Do other hospitals use it?', a:'Over forty sites across three countries.', weak:'Popularity is not local evidence.'}];
+  const order = [5,0,6,1,2,7,3,4];
+  const asked = new Set();
+  const chat = h('div',{class:'chat'}, h('div',{class:'msg them'},'Thanks for your time. ClearView Triage prioritises abnormal chest films so they reach a radiologist first. What would you like to know?'));
+  const qlist = h('div',{class:'qlist'});
+  const score = h('div',{class:'stats'});
+  function upd(){ const good = [...asked].filter(i=>Q[i].k).length, weak = [...asked].filter(i=>!Q[i].k).length;
+    score.innerHTML=''; score.append(h('div',{class:'stat'},h('small',null,'Key questions asked'),h('b',null,good+' of 5')), h('div',{class:'stat'},h('small',null,'Low-value questions'),h('b',null,String(weak)))); }
+  order.forEach(i => { const b = h('button',{class:'btn',type:'button'},Q[i].q);
+    b.onclick = () => { if (asked.has(i)) return; asked.add(i); b.disabled = true;
+      chat.append(h('div',{class:'msg you'},Q[i].q), h('div',{class:'msg them'},Q[i].a, Q[i].flag ? h('span',{class:'flag'},'Red flag: '+Q[i].flag) : h('span',{class:'flag',style:'color:var(--muted)'},'Note: '+Q[i].weak)));
+      chat.scrollTop = chat.scrollHeight; upd(); };
+    qlist.append(b); });
+  upd();
+  main.append(h('section',{class:'panel'}, h('h3',null,'Simulation: the meeting'),
+    h('div',{class:'cx'}, h('div',{style:'min-width:0'}, h('p',{class:'hint'},'Your questions'), qlist, h('div',{style:'margin-top:12px'},score)), h('div',{style:'min-width:0'}, chat))));
+  const decOut = h('div',{class:'fb'});
+  const DEC = [
+    ['Buy it: 94% accuracy and forty sites is enough.', false, 'Accuracy without prevalence, validation on the same collection and no monitoring owner: you would be buying an unobserved tool.'],
+    ['Run a local evaluation first: test it on our own films and prevalence, agree a monitoring owner and review triggers, then decide.', true, 'This answers the gaps the supplier could not. Their inability to answer is itself the answer, so you make them, or yourselves, do the work before patients are involved.'],
+    ['Reject AI for chest films altogether.', false, 'The cautions are not reasons to avoid AI; they are the conditions for using it well. Triage tools can help when they are shown to work here and someone watches them.']];
+  const decBox = h('div',{class:'opts'});
+  DEC.forEach(([t,ok,why]) => { const b = h('button',{class:'opt',type:'button'},t); b.onclick = () => { decBox.querySelectorAll('.opt').forEach(x=>x.classList.remove('right','wrong')); b.classList.add(ok?'right':'wrong');
+    const good = [...asked].filter(i=>Q[i].k).length;
+    decOut.innerHTML = (ok?'<b>Sound recommendation.</b> ':'<b>Reconsider.</b> ') + why + (good<5 ? ` You asked ${good} of the five key questions; the ones you skipped would have revealed more red flags.` : ' You asked all five key questions.');
+    if (ok) markDone('supplier'); }; decBox.append(b); });
+  main.append(h('section',{class:'check'}, h('div',{class:'eyebrow'},'Your recommendation'), h('p',{class:'q'},'What do you advise your clinical director?'), decBox, decOut));
+  const ten = h('ol',{class:'ten'});
+  ['AI learns from examples; it is only as good, and as fair, as the data it was trained on.',
+   '"Accuracy" alone is almost meaningless without prevalence, sensitivity, specificity and calibration.',
+   'A model validated only on its own training data has not really been validated at all.',
+   'Performance drifts as patients and practice change; deployed models need monitoring.',
+   'More complex models are not automatically better; flexibility is bought with lost transparency.',
+   'Correlation is not causation: a model can predict an outcome without explaining or controlling it.',
+   'A model trained on one population may perform worse, or unfairly, on another.',
+   'Large language models generate plausible text, not verified fact; always check their output.',
+   'The clinician, not the model, remains accountable; AI is decision support, not decision replacement.',
+   'If a tool\'s makers cannot tell you how it was trained, validated and monitored, be cautious.'].forEach((t,i)=>ten.append(h('li',{class:i===8?'hi':''},t)));
+  main.append(h('section',{class:'panel'}, h('h3',null,'Ten things to remember'), h('p',{class:'hint'},'These are not reasons to avoid AI. They are the conditions for using it well.'), ten));
+  main.append(takeaway('None of the five questions needs any mathematics. All of them need somebody to have done the work. If a supplier cannot answer them, you have learned what you needed to know.'));
+}});
+
+/* ---------- glossary ---------- */
+const GLOSS = [
+ ['Artificial intelligence (AI)','Computer systems performing tasks that normally require human intelligence.'],
+ ['Machine learning (ML)','AI that learns rules from data and examples rather than being programmed by hand.'],
+ ['Model','The set of learned rules produced by training, which is then applied to new data.'],
+ ['Supervised learning','Learning from labelled examples to predict the label of new cases.'],
+ ['Unsupervised learning','Finding structure or groups in data that has no labels.'],
+ ['Reinforcement learning','Learning a policy by acting, receiving feedback, and improving.'],
+ ['Training','The process of adjusting a model so its outputs match the example answers.'],
+ ['Validation','Testing a model on data it has not seen, to estimate real-world performance.'],
+ ['Neural network','A model of interconnected units arranged in layers, with learnable weights.'],
+ ['Deep learning','Machine learning using neural networks with many hidden layers.'],
+ ['CNN (convolutional neural network)','A neural network specialised for images.'],
+ ['Transformer / LLM','A model for language; a large language model (LLM) generates fluent text.'],
+ ['Ensemble','Several different models combined into one answer, so their errors partly cancel.'],
+ ['Sensitivity','The proportion of true cases the model correctly identifies.'],
+ ['Specificity','The proportion of non-cases the model correctly clears.'],
+ ['Positive predictive value (PPV)','Of those the model flags, the proportion who truly have the condition.'],
+ ['AUC','Area under the receiver operating characteristic (ROC) curve: how well a model separates cases from non-cases.'],
+ ['Calibration','Whether a model\'s stated probabilities match observed event rates.'],
+ ['Hallucination','A confident but false output, characteristic of generative models.'],
+ ['Drift','The decline in a model\'s performance as the world changes over time.'],
+ ['RLHF','Reinforcement learning from human feedback: people rank outputs and the model is rewarded for preferred ones.']];
+function renderGloss(q=''){
+  const dl = $('#glossList'); dl.innerHTML=''; const ql = q.toLowerCase();
+  GLOSS.filter(([t,d])=>!ql || t.toLowerCase().includes(ql) || d.toLowerCase().includes(ql)).forEach(([t,d])=>dl.append(h('dt',null,t),h('dd',null,d)));
+}
+$('#glossBtn').onclick = () => { renderGloss($('#glossQ').value); try{ $('#glossDlg').showModal(); }catch(e){ $('#glossDlg').setAttribute('open',''); } };
+$('#glossClose').onclick = () => { try{ $('#glossDlg').close(); }catch(e){ $('#glossDlg').removeAttribute('open'); } };
+$('#glossQ').addEventListener('input', e=>renderGloss(e.target.value));
+
+/* ---------- navigation ---------- */
+let current = 0;
+function renderProgress(){
+  const ids = STATIONS.slice(1).map(s=>s.id); const n = ids.filter(i=>done[i]).length;
+  $('#progTxt').textContent = `${n} of ${ids.length} stations`;
+  $('#progBar').style.width = (100*n/ids.length)+'%';
+  document.querySelectorAll('.rail button').forEach((b,i)=>{ const t = b.querySelector('.tick'); if (t) t.classList.toggle('done', !!done[STATIONS[i].id]); });
+}
+function buildNav(){
+  const rail = $('#rail'), sel = $('#mobSel');
+  STATIONS.forEach((st,i)=>{
+    rail.append(h('button',{type:'button',onclick:()=>go(i)}, h('span',{class:'n'},st.n), h('span',null,st.title), h('span',{class:'tick'+(i===0?'':''),style:i===0?'visibility:hidden':''})));
+    sel.append(h('option',{value:i}, st.n+' · '+st.title));
+  });
+  sel.onchange = () => go(+sel.value);
+}
+function go(i){
+  current = i; const main = $('#main'); main.innerHTML='';
+  STATIONS[i].render(main);
+  const nav = h('div',{class:'navrow'});
+  nav.append(i>0 ? h('button',{class:'btn',type:'button',onclick:()=>go(i-1)},'← '+STATIONS[i-1].title) : h('span'));
+  nav.append(i<STATIONS.length-1 ? h('button',{class:'btn primary',type:'button',onclick:()=>go(i+1)},(i===0?'Start the round':'Next: '+STATIONS[i+1].title)+' →') : h('span'));
+  main.append(nav);
+  document.querySelectorAll('.rail button').forEach((b,j)=>b.setAttribute('aria-current', String(j===i)));
+  $('#mobSel').value = i;
+  try { localStorage.setItem('aiwr-cur', String(i)); } catch(e){}
+  try { history.replaceState(null,'','#'+STATIONS[i].id); } catch(e){}
+  window.scrollTo({top:0, behavior:'instant'});
+  renderProgress();
+}
+buildNav();
+let start = 0;
+const hashId = (location.hash||'').slice(1);
+const hi = STATIONS.findIndex(s=>s.id===hashId);
+if (hi>=0) start = hi; else { try { const c = +localStorage.getItem('aiwr-cur'); if (c>=0 && c<STATIONS.length) start = c; } catch(e){} }
+go(start);
+</script>
+
+</body>
+</html>

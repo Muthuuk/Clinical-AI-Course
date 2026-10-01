@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ward Round Lectures</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: lecture list on the left; on the right a 16:9 "video" stage (slide + presenter picture-in-picture),
+   caption bar, transport controls, optional tutor notes, then the lecture's questions. Same family as AI Ward Round. */
+:root{
+  --bg:#F3F6F6; --surface:#FFFFFF; --surface-2:#E9EFEF; --ink:#14232A; --muted:#55686D; --line:#D2DCDD;
+  --accent:#0E6B66; --accent-soft:#D6ECEA; --signal:#B97A06; --signal-soft:#F7EBD2;
+  --good:#2C7A4B; --good-soft:#DCEFE3; --bad:#AE3434; --bad-soft:#F6DEDE; --stage:#FFFFFF;
+  --f-display:"Newsreader", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --stage:#FFFFFF; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --stage:#FFFFFF; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.55}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:1280px;margin:0 auto;padding:10px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.brand h1{font-size:1.45rem}
+.brand span{color:var(--muted);font-size:.85rem}
+.top-right{margin-left:auto;font-size:.85rem;color:var(--muted)}
+.shell{max-width:1280px;margin:0 auto;padding-inline:16px;padding-block:20px 60px;display:grid;grid-template-columns:270px minmax(0,1fr);gap:26px}
+@media (max-width:900px){.shell{grid-template-columns:minmax(0,1fr)}}
+.list{display:flex;flex-direction:column;gap:6px;align-self:start;position:sticky;top:76px}
+@media (max-width:900px){.list{position:static;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}
+.lbtn{display:flex;flex-direction:column;gap:3px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;cursor:pointer}
+.lbtn:hover{border-color:var(--accent)}
+.lbtn[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.lbtn .n{font-family:var(--f-mono);font-size:.74rem;color:var(--accent)}
+.lbtn b{font-size:.93rem;line-height:1.3}
+.lbtn .meta{display:flex;gap:6px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);align-items:center}
+.pill{display:inline-flex;align-items:center;border-radius:99px;padding:2px 9px;font-size:.76rem;font-weight:600;background:var(--surface-2)}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.eyebrow{font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.head h2{font-size:1.9rem;margin-top:3px}
+.head p{color:var(--muted);margin-top:6px;max-width:70ch}
+.player{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.stage{position:relative;aspect-ratio:16/9;width:100%;background:var(--stage);border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.stage img.slide{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:opacity .35s}
+.slidetag{position:absolute;left:10px;top:10px;background:rgba(10,30,34,.78);color:#fff;font-size:.75rem;padding:3px 9px;border-radius:99px;font-family:var(--f-mono)}
+.speaker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center}
+.tutor{width:112px;aspect-ratio:1/1;border-radius:50%;background:var(--accent-soft);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line);overflow:hidden;flex:none}
+.tutor-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.75rem;color:var(--muted)}
+.tutor.speaking{box-shadow:0 0 0 3px var(--accent)}
+.tutor svg{width:100%;height:100%;display:block}
+@media (max-width:600px){.tutor{width:72px}.speaker{gap:10px}}
+@media (max-width:900px){.list{order:2}}
+.bigplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,20,22,.38);border:0;cursor:pointer;color:#fff;flex-direction:column;gap:8px;font-weight:600}
+.bigplay span.c{width:76px;height:76px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.cap{min-height:4.6em;background:var(--surface-2);border-radius:8px;padding:10px 14px;font-size:1.04rem;line-height:1.5}
+.cap .w.now{background:var(--signal-soft);color:var(--ink);border-radius:3px;box-shadow:0 0 0 2px var(--signal-soft)}
+.cap .w.past{color:var(--ink)}
+.cap .w{color:var(--muted)}
+.ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:.9rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.track{flex:1 1 220px;display:flex;gap:3px;align-items:center;min-width:160px}
+.track button{flex:1;height:10px;border:0;border-radius:3px;background:var(--surface-2);cursor:pointer;padding:0;position:relative;overflow:hidden}
+.track button i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);width:0}
+.time{font-family:var(--f-mono);font-size:.82rem;color:var(--muted);min-width:92px;text-align:right}
+.settings{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:.85rem;color:var(--muted)}
+.settings select{padding:5px 8px;border-radius:7px;border:1px solid var(--line);background:var(--surface);max-width:230px}
+.settings label{display:flex;gap:6px;align-items:center}
+.notice{font-size:.85rem;border-radius:8px;padding:8px 12px;background:var(--signal-soft)}
+.notes{background:var(--surface);border:1px dashed var(--accent);border-radius:var(--r);padding:14px 16px;font-size:.92rem;white-space:pre-wrap;max-height:340px;overflow-y:auto}
+.quiz{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:16px}
+.quiz h3{font-size:1.3rem}
+.qq{display:flex;flex-direction:column;gap:7px}
+.qq .q{font-weight:600;max-width:72ch}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 12px;cursor:pointer}
+.opt:hover{border-color:var(--accent)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.fb{font-size:.9rem;max-width:72ch}
+.score{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.foot{font-size:.8rem;color:var(--muted);max-width:80ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body style="margin:0">
+<header class="top"><div class="top-in">
+  <div class="brand"><h1>Ward Round Lectures</h1><span>Fundamentals of AI for clinicians · narrated by a virtual tutor</span></div>
+  <a href="../index.html" style="font-size:.85rem;color:var(--accent);font-weight:600;margin-left:auto">AI Ward Round simulations</a>
+  <div class="top-right" id="overall" style="margin-left:14px">0 of 6 lectures watched</div>
+</div></header>
+
+<div class="shell">
+  <nav class="list" id="list" aria-label="Lectures"></nav>
+  <main class="main">
+    <div class="head"><div class="eyebrow" id="lEyebrow"></div><h2 id="lTitle"></h2><p id="lSub"></p></div>
+    <section class="player" aria-label="Lecture player">
+      <div class="stage" id="stage">
+        <img class="slide" id="slideImg" alt="">
+        <span class="slidetag" id="slideTag"></span>
+        <button class="bigplay" id="bigPlay" type="button"><span class="c"><svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="#fff"/></svg></span><span>Play lecture</span></button>
+      </div>
+      <div class="speaker"><div class="tutor-wrap"><div class="tutor" id="tutor" aria-hidden="true"></div><span>Sam, your tutor</span></div><div class="cap" id="cap" aria-live="polite"></div></div>
+      <div class="ctrls">
+        <button class="btn" id="prevBtn" type="button" aria-label="Previous slide">◀ Slide</button>
+        <button class="btn primary" id="playBtn" type="button">Play</button>
+        <button class="btn" id="nextBtn" type="button" aria-label="Next slide">Slide ▶</button>
+        <div class="track" id="track" aria-label="Slides in this lecture"></div>
+        <span class="time" id="time">0:00 / 0:00</span>
+      </div>
+      <div class="settings">
+        <label for="voiceSel">Voice <select id="voiceSel"></select></label>
+        <label for="rateSel">Speed <select id="rateSel"><option value="0.85">0.85×</option><option value="0.95" selected>Normal</option><option value="1.1">1.1×</option><option value="1.25">1.25×</option><option value="1.4">1.4×</option></select></label>
+        <label for="capChk"><input type="checkbox" id="capChk" checked> Captions</label>
+        <label for="notesChk"><input type="checkbox" id="notesChk"> Tutor notes</label>
+      </div>
+      <div class="notice" id="voiceNote" hidden></div>
+    </section>
+    <section class="notes" id="notes" hidden aria-label="Tutor notes for this slide"></section>
+    <section class="quiz" id="quiz" aria-label="Questions"></section>
+    <p class="foot">Slides from Appendix A, "An Introduction to AI for the Clinical Expert", in A Clinical Guide to AI in Healthcare. The tutor is an animated illustration and the voice comes from your device, so it sounds different on each computer. For education only.</p>
+  </main>
+</div>
+
+<script>
+const LECTURES = [{"id": "l1", "title": "What AI is, and rules versus examples", "station": "Stations 01 and 02", "slides": [{"img": 3, "say": ["Welcome. I'm Sam, your virtual tutor for this short course on the fundamentals of AI for clinicians.", "The course assumes you know medicine, and it assumes nothing at all about computing. There is no maths in it.", "Over six short lectures you will learn to tell ordinary software from machine learning, to recognise how a tool was trained, to see where a tool can fail during its working life, to read a performance claim properly, and to understand why a chatbot can be fluent, confident and wrong at the same time.", "None of this needs arithmetic or code. All of it is about asking the right question of a supplier, a paper or a colleague. After each lecture there are a few quick questions to check your understanding."]}, {"img": 5, "say": ["Let's start with the words, because two different questions get muddled all the time.", "The first question is: what kind of system is it? Look at the rings on the left, and read them from the outside in.", "Artificial intelligence is the widest word. It means a computer doing something that would normally need a person. A set of rules written by hand counts.", "Machine learning is the part that changed things. Instead of being given the rules, it works them out from examples.", "Deep learning is machine learning done with networks that have many layers. It is what reads your scans.", "Generative AI sits inside deep learning. Large language models and image generators are deep networks too. They just produce new content instead of a label.", "Now the second question: how was it trained? Supervised, unsupervised, reinforcement and self-supervised learning are methods, not places in the rings. One system can use several.", "The amber bar joins the two. A modern large language model is a deep generative network, built by stacking three methods in sequence: self-supervised learning on a huge amount of text, then supervised learning on good examples, then reinforcement learning from human feedback.", "So if someone asks whether ChatGPT is reinforcement learning, the honest answer is that reinforcement learning is one of three things used to build it. It is not what it is."]}, {"img": 7, "say": ["If you take only one idea away from this whole course, make it this one.", "On the left is traditional software. A person writes the rules. Rules and data go in, and answers come out. Everything it does, somebody decided in advance.", "On the right, machine learning flips that round. You supply the data and the answers: many thousands of worked examples. The computer works out the rules for itself and packages them into what we call a trained model. That model is then pointed at new patients.", "Think of how a registrar learns. Not from a rulebook, but from thousands of patients. They form an internal picture, and they apply it to the next person through the door. Machine learning is that, done by a machine.", "This is what lets a computer read a chest film, because nobody could ever write down the rules for that.", "And it is also why the tool is only ever as good as the examples it was shown."]}, {"img": 9, "say": ["Here is the same sepsis alert, built both ways.", "The rule-based version is written by a consultant who sets every threshold in advance. You can read every line. But it misses any presentation nobody thought of.", "The learned version studies forty thousand past admissions, each one marked as sepsis or not. It finds patterns nobody specified, including, if you are unlucky, that one ward code predicts sepsis simply because that ward admits the sickest patients. Take it to another hospital and that shortcut fails.", "Look at the last two rows. The learned alert can do more, and it asks more of you afterwards: continuous monitoring, and re-training when it drifts.", "Neither column is the right answer. Where the rules are known and the stakes are high, a written rule is often better, because it is stable and you can audit it.", "And if your organisation cannot resource that monitoring, it should not buy the second column. You can try both alerts yourself in Station 2 of the AI Ward Round."]}], "quiz": [{"q": "What is the key difference between ordinary software and machine learning?", "o": ["Machine learning is given the rules by an expert", "Machine learning is given examples with answers and works the rules out", "Machine learning programs itself with no human choices"], "a": 1, "e": "Ordinary software is given the rules. Machine learning is given the answers and works out the rules. People still choose the data, the labels and the goal."}, {"q": "Where does generative AI sit in the rings?", "o": ["Outside AI altogether", "Inside deep learning", "Alongside machine learning, as an alternative to it"], "a": 1, "e": "The rings sit inside one another. Generative AI is a kind of deep learning, which is a kind of machine learning, which is a kind of AI."}, {"q": "A sepsis model learned that 'ward 7' predicts sepsis. What is the best description?", "o": ["A shortcut that may not hold at another hospital", "Proof that ward 7 causes sepsis", "A coding error by the developers"], "a": 0, "e": "The model found a pattern in its data, not a cause. Ward 7 admitted the sickest patients at one hospital. Elsewhere the pattern breaks."}, {"q": "When is a hand-written rule usually the better choice?", "o": ["Never: learned models are always better", "When the rules are known, the stakes are high and it must be auditable", "Whenever there is a lot of data"], "a": 1, "e": "A rule is transparent, stable and never drifts. Where the physiology is known and decisions must be defended, that is a strength."}]}, {"id": "l2", "title": "How machines learn, and how a tool is built", "station": "Stations 03 and 04", "slides": [{"img": 10, "say": ["Machines can learn in three main ways, and knowing which one a tool uses tells you what evidence to ask for.", "The first is supervised learning. The machine is given examples where somebody has already written down the right answer: scans labelled benign or malignant, for instance. It learns to give that answer for a new scan. Most diagnostic AI you will meet works this way.", "The question to ask is: who labelled the examples, and how reliably? If one tired registrar labelled ten thousand films, that is the ceiling on the model.", "The second is unsupervised learning. There are no answers at all. The machine is simply asked to find structure, such as grouping heart-failure patients into types nobody had named. The question to ask: do these groups mean anything clinically, or are they just a quirk of how the data was recorded?", "The third is reinforcement learning. The machine learns by acting and seeing what happens, a bit like refining your management over a career. An insulin dosing policy is an example. The question to ask: where did it do its trial and error? If the answer is 'on patients', stop.", "A question people often ask: isn't unsupervised learning better, because no human labels means no human bias? Not really. No labels also means no right answers to check against. You gain freedom from labelling bias, and you lose any way of saying whether the output is correct.", "You may also hear about self-supervised learning, where the data supplies its own labels, for example by hiding a word and asking the machine to guess it. That is how chatbots start their training. It changes none of the questions you should ask.", "Here is one service seen all three ways. In breast screening, supervised learning decides recall or no recall for each mammogram. Unsupervised learning finds new density patterns. Reinforcement learning adjusts each woman's recall interval from observed outcomes. Same images, three very different kinds of evidence."]}, {"img": 12, "say": ["Whichever way it learns, a tool has to be built, and the build has six stages. Each stage can fail.", "Collect: gather the data. Prepare: clean it and label it. This is usually the longest and least glamorous stage, often more than half the work. Train: fit the model. Validate: test it on data it has never seen. Deploy: put it into clinical use. And monitor: watch it.", "Now look at the dashed line running back from monitoring to training. This is the part that often gets left out. Monitoring can show the model is slipping, because your patients changed, or the scanner was replaced, or practice moved on. That triggers re-training. A model is never simply finished.", "Here is a real-world pattern. A deterioration score trained on admissions before 2020 began over-calling badly through 2021. Nothing in the code had changed. The case mix, the admission thresholds and the way things were recorded had all moved. Monitoring spotted it and re-training fixed it. Without monitoring, staff would have slowly stopped responding to the alert, which is the more dangerous failure.", "People often ask how often a model should be re-trained. There is no fixed interval. The right answer is: when monitoring says so. That is exactly why monitoring is not optional.", "They also ask whether validation is just testing. It is testing on data the model has genuinely never seen, ideally from a different site or a different year. Testing on the training data is the commonest way a paper overstates how good a model is.", "Some newer tools update themselves continuously while in use. That makes monitoring harder, not easier, which is why most clinical models are deliberately frozen between checked versions.", "Read the questions under each stage as a checklist. Is it my population? Who assigned the labels? On whose machine was it trained? Was the test data truly held back? Who is accountable? Is anyone watching?", "And the question to take back to work: who in your organisation owns stage six? You can play four years of that deterioration score in Station 4."]}], "quiz": [{"q": "A tool learns to classify mammograms from 200,000 films with known outcomes. Which kind of learning is this?", "o": ["Supervised", "Unsupervised", "Reinforcement"], "a": 0, "e": "It learns from examples where the right answer is already attached, so it is supervised. Ask who labelled them and how reliably."}, {"q": "What is the key question to ask of a reinforcement learning tool?", "o": ["How many layers does it have?", "Where did it do its trial and error?", "Was it built with open-source software?"], "a": 1, "e": "Reinforcement learning learns by acting. You need to know that the trial and error happened safely, not on real patients."}, {"q": "Which stage of the lifecycle is most often missing in practice?", "o": ["Training", "Validation", "Monitoring"], "a": 2, "e": "Monitoring is the dashed loop. It is the stage nobody owns in many organisations, and without it a model's decline goes unseen."}, {"q": "A deterioration score started over-calling in 2021, though its code had not changed. Why?", "o": ["The software was hacked", "The patients and recording practice changed, so the model drifted", "Over-calling is normal and needs no action"], "a": 1, "e": "This is drift. The world moved and the model did not. Monitoring detects it, and re-training corrects it."}]}, {"id": "l3", "title": "Inside the model: networks and choosing a model", "station": "Stations 05 and 06", "slides": [{"img": 14, "say": ["Let's open the box and look inside a neural network. You need no mathematics for this.", "Clinical details come in on the left: age, blood pressure, a test result, a symptom score.", "Follow one line from age to a unit in the middle. That line is a number. It says how much this signal counts. We call it a weight.", "The signals pass through the middle layers, called hidden layers simply because you never see them, and come out on the right as one answer: here, a risk score of 0.82.", "Training means showing the network thousands of cases, comparing its answer with the truth each time, and nudging every one of those numbers until the answers line up. That is all learning is here.", "This picture has forty-five lines. A model reading a chest film has tens of millions. Exactly the same idea, just enormously more of it, and no person has ever checked those numbers one by one.", "When a network has many hidden layers, we call it deep. That is where the phrase deep learning comes from."]}, {"img": 16, "say": ["So we can build models of almost any complexity. The real question is whether we should, and that is a trade-off.", "On the left is logistic regression. This is like a clinical risk score: you can see every factor and say exactly why it gave the number it did. Decision trees are similar: plain if-then rules you could follow on paper.", "In the middle are random forests and support vector machines, the workhorses for tables of labs, vitals and coded history. Already hard to explain in words.", "On the right are neural networks, deep networks for images, and large language models for text. Very capable, and you cannot say why they concluded what they did.", "Further right is not better. It is a different bargain. You buy the ability to catch subtler patterns, and you pay for it in transparency.", "Picture a discharge-risk score at three in the morning. A simple regression shows the score is driven mostly by age and sodium. The junior doctor knows that sodium sample was haemolysed, so she can override it and say why. A more complex model, slightly better in a paper, gives a number and no argument.", "You may hear that deep models can now be explained, with colour maps or feature scores. Those give a plausible account of the output, not the actual reasoning. They are a useful hint, and a poor substitute for a model you could have read directly.", "And more complex is not always more accurate. On tables of clinical data of typical size, simpler models often match or beat deep ones, and they always beat them on being explainable.", "Ask yourself: where on this line would you want a tool that decides who gets an intensive care bed?"]}, {"img": 18, "say": ["How do you choose a sensible starting model? Ask two questions, in this order.", "First: what is the data? Tables of numbers, images, free text, or data with no labels at all. That alone rules out most options. You do not put a chest film into a logistic regression, and you do not put twelve blood results into an image network.", "Second: what does the setting demand? If the reasoning must be visible, start with logistic regression or a decision tree. If accuracy comes first and explanation can be added later, a random forest or gradient boosting.", "For images, a convolutional network. For free text such as letters and reports, a language model, with a human checking the output. That last part is not optional. With no labels, clustering.", "What if you have images and tables together, say a chest film plus blood results? That is called a multimodal model, usually an image network with the numbers joined in near the end. It is common, and it changes none of the questions you should ask.", "Remember too that this gives you a starting family, not a specification. The amount of data, how rare the outcome is, missing values and how the tool fits the workflow all move the answer. But having a starting point is what lets you argue back with a data scientist.", "The rule of thumb in amber is worth remembering: start with the simplest model that could work, and make the complex one prove that it earns its lack of transparency. On tables of clinical data, it often cannot. Try choosing models yourself in Station 6."]}], "quiz": [{"q": "In a neural network, what is a weight?", "o": ["How heavy the computer is", "A number on each connection saying how much a signal counts", "The patient's body weight"], "a": 1, "e": "Every line carries a weight. Training nudges those numbers until the network's answers match the examples."}, {"q": "What does 'deep' in deep learning mean?", "o": ["The medical problem is complicated", "The network has many hidden layers", "It used a very large amount of data"], "a": 1, "e": "Deep simply refers to the number of hidden layers."}, {"q": "Moving from logistic regression towards deep networks generally means:", "o": ["Better accuracy in every case", "Catching subtler patterns at the cost of transparency", "Easier auditing"], "a": 1, "e": "It is a bargain, not an upgrade. On typical tables of clinical data, simpler models often match complex ones and are always easier to explain."}, {"q": "You want to summarise free-text discharge letters. Which starting point fits?", "o": ["Logistic regression", "A language model, with a human checking the output", "Clustering"], "a": 1, "e": "Free text points to a language model. Because these models can invent content, a person must check the output."}]}, {"id": "l4", "title": "How AI reads images, and ensembles", "station": "Stations 07 and 08", "slides": [{"img": 20, "say": ["Imaging is where most clinicians first meet AI, so let's look at how a network reads a scan.", "The image arrives as a grid of brightness values. Nothing more.", "The first layers respond to the simplest things: edges and sharp changes in brightness, such as rib margins, the diaphragm and the heart border.", "The next layers combine those edges into textures and simple shapes.", "Deeper layers combine those again into structures that matter clinically, such as a rounded opacity.", "At the end, a classifier turns all of that into a probability. Here, 0.87 for a nodule, with a heat map showing where the network's activity was strongest.", "Does it need millions of images? Not usually. A technique called transfer learning starts from a network already trained on everyday photographs and adapts it, which brings the need down to hundreds or a few thousand well-labelled clinical images.", "If you are curious what 'convolutional' means: the network slides a small window across the whole image, looking for one kind of pattern everywhere, using the same rule each time. That is enough to know.", "Two points matter at the bedside. First, nobody told it what an edge or a nodule is. It worked out which features were useful from labelled examples. That is why it can outperform hand-built systems, and why you cannot audit its reasoning.", "Second, a heat map shows where the model looked. It does not show why it concluded. Models have been caught keying on chest drains, on the radiographer's side marker, and on which hospital's scanner produced the film. One well-known pneumonia model partly learned to recognise the hospital. It validated superbly and performed poorly everywhere else.", "In Station 7 you can watch a shortcut model fix its gaze on the side marker."]}, {"img": 22, "say": ["Serious imaging systems rarely rely on just one model. They use an ensemble.", "Think of a multidisciplinary team meeting. Three readers with different training look at the same scan, and you reach one decision from their three opinions.", "Here one scan goes to three genuinely different models. Each gives its own probability: 0.91, 0.62 and 0.79. A combiner turns those into one answer. The simplest combiner is an average. A weighted vote gives more say to models that have earned more trust. The most sophisticated is a small model trained to learn when to believe whom.", "The average here is 0.77. But look at model B: 0.62, well out of step with the others. That disagreement is information. A well-designed system sends a disputed case to a human reader rather than clearing it automatically.", "Why does it help? Different models make different mistakes, and combining them cancels some out. When does it fail? If all three were trained on the same data from the same scanner, they fail together, confidently. And it costs more computing, slower answers, and an explanation that is now three explanations.", "Why not always use an ensemble, if it is better? Because of the computing cost, the delay in a live reporting workflow, and a harder approval story. The ensemble is approved as one device, which makes it difficult to change any one member later.", "You may hear three technical words. Bagging trains the same method on different samples of the data; a random forest is exactly this. Boosting trains models in sequence, each one fixing the previous one's mistakes. Stacking trains a small model to combine the others.", "Diversity is the whole point. Three genuinely different models beat ten near-identical ones. When a supplier quotes a performance figure, ask whether it is one model or an ensemble, and how the members differ."]}], "quiz": [{"q": "What does a heat map on an AI-read scan show?", "o": ["Where the model's activity was strongest", "Why the model reached its conclusion", "That the finding is definitely real"], "a": 0, "e": "It shows where the model looked, which could be a lesion, a drain or a marker. It is a hint for a person, never a justification."}, {"q": "A pneumonia model validated superbly but performed poorly at other hospitals. The likely reason?", "o": ["It partly learned to recognise which hospital took the image", "Other hospitals used the wrong software version", "Pneumonia looks different in other countries"], "a": 0, "e": "Disease prevalence differed by site, so recognising the hospital helped in validation but has nothing to do with the disease."}, {"q": "Three models score a scan 0.91, 0.62 and 0.79. What should a well-designed system do?", "o": ["Recall automatically, since the average is 0.77", "Send the case to a human reader because the models disagree", "Ignore the middle model"], "a": 1, "e": "The spread between models is itself a signal. The ensemble's real output is a triage decision."}, {"q": "An ensemble helps most when its members are:", "o": ["Copies of the same model", "Trained on the same data and scanner", "Genuinely different in design or training data"], "a": 2, "e": "Different models make different mistakes. Near-identical models make the same mistakes together."}]}, {"id": "l5", "title": "Reading the evidence", "station": "Station 09", "slides": [{"img": 24, "say": ["This is the most practical lecture in the course, so let's take it slowly.", "Start with a trap. A model that calls every single case negative will be ninety-nine per cent accurate for a disease that one per cent of patients have. And it is completely useless. Accuracy on its own is close to meaningless.", "Now a worked example. One thousand patients. Fifty have the disease: five per cent, a realistic screening figure.", "The model correctly flagged 45 of the 50. It missed 5. It wrongly flagged 95 who were well. And it correctly cleared 855.", "Sensitivity: of the 50 who had it, it caught 45. Ninety per cent. Specificity: of the 950 who did not, it correctly cleared 855. Also ninety per cent. Accuracy: 900 right out of 1,000. Ninety per cent.", "Now pause and make a guess. Of everyone this model flags as positive, what proportion actually has the disease?", "Most people guess seventy or eighty per cent. The answer is 45 true cases out of 140 flagged. Thirty-two per cent. Two out of every three people it flags are well.", "Nothing was wrong with the model. It is the low prevalence that does this, and no headline figure will tell you. Run the same model in a clinic where thirty per cent of patients have the disease, and the figure rises to about seventy-nine per cent. Same model, completely different usefulness. 'Validated' always has to mean 'validated on whom'.", "There is a mirror-image figure worth knowing. Of everyone the model clears, 855 out of 860 are truly well: over ninety-nine per cent. So a tool like this can be genuinely useful for ruling disease out, and poor for ruling it in.", "So is ninety per cent accuracy good? You cannot answer that without knowing the prevalence, the threshold used, and what the alternative is.", "What counts as a good area under the curve depends on the setting, and it says nothing about calibration or about usefulness at the threshold you would actually use. Treat it as one number among several, never as a verdict.", "Calibration matters most when you act on a probability: anticoagulation, surgical risk or escalating care.", "Two more ideas. The curve in the middle, and the area under it, tell you how well a model separates cases from non-cases. The plot on the right is calibration: when the model says seventy per cent risk, does the event happen about seventy per cent of the time? A model can separate well and still give misleading percentages, and then its numbers are dangerous to act on."]}, {"img": 26, "say": ["None of this is science fiction. AI is already in use across medicine.", "In radiology it finds nodules on CT and pushes brain bleeds to the top of the reporting list. In ophthalmology it grades diabetic eye disease from retinal photographs at screening scale. In dermatology it classifies skin lesions. In pathology it finds cancer in lymph nodes on digital slides. In cardiology it reads heart rhythms from ECGs and wearables.", "Five of these six are supervised learning, mostly deep, mostly on images, because that is where labelled examples are plentiful.", "The odd one out is documentation: ambient scribes and letter drafting. That one is generative, and it is the one that can invent something that was never said. That is our final lecture. Before then, try the thousand-patient simulation in Station 9 and make your guess before you reveal."]}], "quiz": [{"q": "A model with 90% sensitivity and 90% specificity is used where 5% have the disease. Of those it flags, roughly how many truly have it?", "o": ["About 90%", "About 75%", "About a third"], "a": 2, "e": "45 true cases among 140 flagged is 32%. Low prevalence means false alarms from the large healthy group swamp the true cases."}, {"q": "The same model is used in a clinic where 30% have the disease. What happens to that figure?", "o": ["It stays the same", "It rises to about 79%", "It falls to about 10%"], "a": 1, "e": "270 true cases among 340 flagged is about 79%. Same model, different setting, transformed usefulness."}, {"q": "What does calibration mean?", "o": ["The model's stated probabilities match what actually happens", "The model was tested on a calibrated scanner", "The model has high accuracy"], "a": 0, "e": "If it says 70% risk, the event should happen about 70% of the time. Poor calibration makes the numbers dangerous to act on."}, {"q": "Which is the most useful question to ask a supplier about performance?", "o": ["What is the accuracy?", "What is the area under the curve?", "What proportion of flagged patients truly have the condition at our prevalence?"], "a": 2, "e": "The predictive value at your own prevalence tells you what the tool will mean for your patients."}]}, {"id": "l6", "title": "Generative AI, and the five questions", "station": "Stations 10 and 11", "slides": [{"img": 27, "say": ["Everything so far has classified or predicted. Is this lesion malignant? Will this patient deteriorate? Generative AI is different: it produces new content.", "Look at the top row: the three stages of building a large language model. First, pre-training on a vast amount of text, learning by predicting words that have been hidden. The text supplies its own answers, so this is self-supervised learning. Second, fine-tuning on examples of good answers written by people. That is supervised learning. Third, alignment: people rank its answers, and it is rewarded for the ones they preferred. That is reinforcement learning from human feedback.", "Now try this. The patient was commenced on... Finish the sentence in your head. Perhaps you thought of antibiotics. That is the mechanism. You just did it. The model ranks likely next words, picks one, then does it again. No looking anything up, no reference.", "Notice that none of the three build stages checks whether the output is true. The last stage rewards what people preferred, which usually goes with truth but is not the same thing. So the model can be confident, fluent and completely wrong. That is called hallucination.", "Ask a chatbot for the evidence behind a drug choice and it may give you a perfectly formatted reference to a paper that does not exist. A plausible citation is exactly what the pattern predicts.", "Can we stop it hallucinating? We can reduce it a great deal, by grounding the model in documents it retrieves and by keeping its task narrow. We cannot remove it. So design the workflow so that a competent person sees the output before it matters.", "Ambient scribes are now the fastest-spreading AI in clinical practice, so this matters today. Read the draft as you would a letter from a new junior: helpful, usually right, and occasionally confident about something that never happened.", "Yet the same mechanism writes an excellent first draft of a clinic letter, because there a fluent, conventional draft is what you want, and a clinician reads it before it goes anywhere. A strong drafting aid. Not a source of clinical truth. Fluency is not accuracy."]}, {"img": 29, "say": ["Here are ten things to remember. Three matter most.", "Number two: accuracy alone is almost meaningless without prevalence, sensitivity, specificity and calibration.", "Number nine: the clinician, not the model, remains accountable. AI is decision support, not decision replacement.", "And number ten: if a tool's makers cannot tell you how it was trained, validated and monitored, be cautious. These are not reasons to avoid AI. They are the conditions for using it well."]}, {"img": 32, "say": ["Finally, five questions to ask about any clinical AI tool. If you remember nothing else, remember these.", "One: what was it trained on, and were those patients like mine? Population, era, equipment and case mix.", "Two: who assigned the labels, and how reliably? A supervised model cannot be better than its answers.", "Three: was it validated on genuinely independent data? A different site, a different period, ideally a different scanner.", "Four: what is the predictive value at my prevalence? Not accuracy, not the area under the curve.", "Five: who is monitoring it now, and what triggers a review? If nobody owns that answer, the tool's performance is unobserved.", "None of these questions needs mathematics. All of them need somebody to have done the work. If a supplier cannot answer them, you have learned what you needed to know. Practise this in Station 11, where you interview a supplier yourself. Thank you for joining me."]}], "quiz": [{"q": "How does a large language model produce its answer?", "o": ["It looks up facts in a medical database", "It ranks likely next words and picks one, again and again", "It copies the closest web page"], "a": 1, "e": "It predicts likely sequences of words. Nothing in that process checks that the output is true."}, {"q": "The human-feedback stage of building an LLM rewards:", "o": ["Answers that are verified as true", "Answers that people preferred", "Answers that are shortest"], "a": 1, "e": "Preference usually goes with truth but is not the same thing, which is why a confident falsehood can survive."}, {"q": "Who remains accountable for a decision supported by AI?", "o": ["The software supplier", "The model", "The clinician"], "a": 2, "e": "AI is decision support, not decision replacement."}, {"q": "A supplier cannot tell you how their tool was validated or who monitors it. What should you conclude?", "o": ["It is a documentation gap; buy it anyway", "That is your answer: be cautious", "Monitoring is not needed for approved tools"], "a": 1, "e": "If the makers cannot answer the five questions, you have learned what you needed to know."}]}];
+const NOTES = {"3": "Read two or three of these aloud, not all eight — reading a full outcomes list flattens a room.\n\nPick the ones that match your audience. For a radiology or imaging audience, read outcomes 5, 6 and 7. For a board or governance audience, read 3, 7 and 8. For a general clinical audience, read 1, 2 and 7.\n\nSay plainly: \"None of this requires you to do any arithmetic or write any code. All of it is about being able to ask the right question of a supplier, a paper, or a colleague.\"\n\nThen move on briskly. This slide is a contract, not content.", "5": "THE POINT OF THIS SLIDE: two different questions get muddled constantly, and separating them prevents most of the confusion that follows.\n\nLEFT SIDE — what kind of system is it? Go outside in.\n\n\"Artificial intelligence is the widest word. A computer doing something that would normally need a person. A hand-written rule set counts.\"\n\n\"Machine learning is the part that changed things. It works the rules out from examples instead of being given them.\"\n\n\"Deep learning is machine learning done with many-layered networks. It is what reads your scans.\"\n\n\"Generative AI sits inside deep learning. Large language models, and image generators too, are deep neural networks — they just produce new content instead of a label.\"\n\nRIGHT SIDE — how was it trained? \"This is a completely separate question. Supervised, unsupervised, reinforcement, self-supervised. These are not places in the hierarchy on the left. They are methods, and one system can use several.\"\n\nTHE AMBER BAR is the payload. Say it slowly: \"A modern large language model is a deep generative network, and it is built by stacking three paradigms in sequence. Self-supervised pre-training on a huge corpus. Then supervised fine-tuning on curated examples. Then reinforcement learning from human feedback, which is where the ranking of good and bad answers comes in.\"\n\nThen the sentence that makes it stick: \"So if somebody asks whether ChatGPT is reinforcement learning, the honest answer is: reinforcement learning is one of three things used to build it. It is not what it IS.\"\n\nDo NOT define the word 'algorithm' here. It comes later and defining it now costs you five minutes.", "7": "If a learner takes only one thing away from the whole session, make it this.\n\nTeach the LEFT panel first: \"Traditional software. A person writes the rules. Rules plus data go in, answers come out. Everything it does, somebody decided in advance.\"\n\nThen the RIGHT: \"Machine learning flips it. You supply the data AND the answers — many, many worked examples. The computer works out the rules for itself, and packages them into what we call a trained model. That model is then pointed at new patients.\"\n\nThe clinical consequence, said slowly: \"This is what lets a computer read a chest film, because nobody could write down the rules for that. And it is also why the tool is only ever as good as the examples it was shown.\"\n\nReturn to the diagnostic-reasoning analogy: a registrar does not learn from a rulebook. They learn from several thousand patients, form an internal model, and apply it. Machine learning is that, mechanised.\n\nTransition: \"So everything now depends on what kind of examples it gets — which gives us three different flavours.\"", "9": "Use this as a spare — deploy it only if the previous slide left blank faces, or if you have a governance audience who will want the comparison in writing.\n\nRead down the first column, then across one row at a time. The two rows that matter most are 'Can you read the logic?' and 'What it needs after go-live'.\n\nThe line to land: \"The machine-learned column is not better. It is capable of more, and it asks more of you afterwards. If your organisation cannot resource the last row, you should not buy the second column.\"\n\nThat sentence is often the single most useful thing a clinical director takes from the whole session.\n\nTiming: 3 minutes, or skip entirely.", "10": "Take the three columns in order, and use the same four beats each time: what it is given, what it learns, a clinical example, and the question to ask.\n\nSUPERVISED — \"It is given examples where somebody has already written down the right answer. Scans labelled benign or malignant. It learns to produce that answer for a new scan. Most diagnostic AI you will meet is this.\" Question: who labelled it, and how reliably? If one tired registrar labelled 10,000 films, that is the ceiling on the model.\n\nUNSUPERVISED — \"No labels at all. It is just given the data and asked to find structure.\" Example: grouping heart-failure patients into phenotypes nobody had named. Question: do the groups mean anything clinically, or are they an artefact of how the data was recorded?\n\nREINFORCEMENT — \"It learns by acting and seeing what happens, like refining your management over a career.\" Example: an insulin dosing policy. Question: where did it do its trial and error? If the answer is 'on patients', stop.\n\nLand this: \"The paradigm tells you which evidence to demand. That is the whole reason for teaching it.\"", "12": "Walk left to right and give each stage one sentence.\n\nCollect — assemble the data. Prepare — clean and label it; say out loud that this is usually the longest and least glamorous stage, often more than half the whole project. Train — fit the model. Validate — test on data it has never seen. Deploy — into clinical use. Monitor — watch it.\n\nThen stop, put a finger on the dashed arc, and trace it slowly back. Say: \"This is the part that gets left out. Monitoring can tell you the model is slipping — because your patients changed, or the scanner was replaced, or practice moved on — and that triggers re-training. A model is never simply finished.\"\n\nNow use the question row underneath. Read them aloud as a checklist: is it my population, who assigned the labels, on whose machine, was it truly held back, who is accountable, is anyone watching.\n\nThe killer question for any room: \"Who in this organisation owns stage six?\" In most trusts the honest answer is nobody, and the silence after that question teaches more than the slide does.", "14": "Keep this light. Nobody needs the mathematics and attempting it loses the room.\n\nPoint at the inputs: \"Clinical variables come in on the left — age, blood pressure, a test result, a symptom score.\"\n\nTrace ONE line with your finger from Age to a hidden unit. Say: \"That line is a number. It says how much this signal counts. We call it a weight.\"\n\nThen: \"The signals pass through these middle layers — hidden layers, because you never see them — and come out on the right as a single answer. Here, a risk score of 0.82.\"\n\nNow the point of the whole slide: \"Training means showing the network thousands of cases, comparing its answer with the truth, and nudging every one of those numbers until the answers line up. That is all learning is here.\"\n\nScale it: \"This picture has 45 lines. A model reading a chest radiograph has tens of millions. Exactly the same idea, just enormously more of it.\"\n\nFinish with the vocabulary payoff: \"When a network has many hidden layers we call it deep. That is the entire origin of the phrase deep learning.\"", "16": "Put a finger on each end of the axis and name the bargain.\n\nLEFT: \"Logistic regression — this is a clinical risk score. You can see every coefficient and say exactly why it produced the number it did. Decision trees are the same: explicit if-then rules you could follow on paper.\"\n\nMIDDLE: \"Random forests and support vector machines. The workhorses for tables of data — labs, vitals, coded history. Already hard to narrate.\"\n\nRIGHT: \"Neural networks, then deep convolutional networks for images, then transformers and large language models for text. Extremely capable, and you cannot say why they concluded what they concluded.\"\n\nNow the sentence that matters: \"Further right is not better. It is a different bargain. You are buying the ability to capture subtler patterns and paying for it in transparency — and in a clinical setting that loss is a real cost, because a decision you cannot explain is harder to trust, harder to audit, and much harder to contest.\"\n\nAsk the room: \"Where on this line would you want a tool that decides who gets an intensive care bed?\" There is no correct answer, and the argument is the learning.", "18": "This is the slide clinicians most often ask for and rarely get.\n\nSay: \"There are two questions, and the order matters.\"\n\nFIRST — what is the data? Tables of numbers, images, free text, or unlabelled data you are exploring. This alone eliminates most of the field. You do not put a chest radiograph into a logistic regression, and you do not put twelve blood results into a convolutional network.\n\nSECOND — what does the setting demand? Two teams with identical data land in different rows depending on whether the decision has to be explained, and on how much data they have.\n\nNow walk the rows. Row one and row two are the same data with different demands: if the reasoning must be visible, take logistic regression; if accuracy comes first and explanation can be bolted on afterwards, take a random forest or gradient boosting.\n\nRow three: images, convolutional network. Row four: free text, a language model — and note the wording, \"with a human checking the output\", which is not optional. Row five: no labels, clustering.\n\nEnd on the amber rule: start with the simplest model that could work, and make the complex one prove that it earns its opacity. In practice, on tabular clinical data, it often cannot.", "20": "Move along the arrows and say what each stage sees.\n\n\"The image arrives as a grid of pixel values. Nothing more.\"\n\n\"The first layers respond to the simplest things — edges, boundaries, sharp changes in brightness. Rib margins, the diaphragm, the mediastinal border.\"\n\n\"The next layers combine those into textures and simple shapes.\"\n\n\"The deeper layers combine those again into clinically meaningful structures — an opacity, a rounded lesion.\"\n\n\"And at the end a classifier turns all of that into a probability. Here, 0.87 for a nodule, together with a heat map showing where in the image the activation was strongest.\"\n\nNow the two lines that matter clinically.\n\nFirst: \"Nobody defined 'edge'. Nobody defined 'nodule'. It worked out which features were useful from labelled examples. That is why it can outperform a hand-built system, and why you cannot audit its reasoning.\"\n\nSecond, on the heat map: \"A heat map shows where the model looked. It does not show why it concluded. Models have been caught keying on chest drains, on the radiographer's laterality marker, and on which scanner produced the film.\"", "22": "Open with the analogy, because it does most of the work: \"This is an MDT. Three readers with different training look at the same scan, and you take a decision from the three opinions rather than from any one of them.\"\n\nWalk it: \"One scan goes to three different models. Not three copies — genuinely different designs, ideally trained on different data. Each returns its own probability: 0.91, 0.62, 0.79. A combiner turns those into a single answer.\"\n\nExplain the combiner options in one line each: \"Simplest is an average. Better is a weighted vote, where models that have earned more trust count for more. Most sophisticated is a small model trained on top, which learns when to believe whom.\"\n\nNow the worked number: \"The average here is 0.77. But look at model B — 0.62, well out of step with the other two. That disagreement is itself information. A well-designed system routes a disputed case to a human reader rather than auto-clearing it.\"\n\nThen the three panels along the bottom. Why it helps: different models make different mistakes, and averaging cancels some out. When it does not: if all three trained on the same data from the same scanner, they fail together, confidently. What it costs: more compute, slower answers, and an explanation that is now three explanations.\n\nLand it: \"Diversity is the entire point. An ensemble of three near-identical models buys you almost nothing except a slower system.\"", "24": "This is the most practically useful slide in the deck. Do not rush it.\n\nOpen with the trap: \"A model that calls every single case negative will be ninety-nine per cent accurate on a disease with one per cent prevalence. And it is completely useless. Accuracy on its own is close to meaningless.\"\n\nNow the worked cohort. \"One thousand patients. Fifty actually have the disease — five per cent, a realistic screening prevalence.\"\n\nRead the four boxes: \"It correctly flagged 45 of the 50. It missed 5. It wrongly flagged 95 who were well. It correctly cleared 855.\"\n\nCompute with the room, out loud. \"Sensitivity: of the 50 who had it, it caught 45. Ninety per cent. Specificity: of the 950 who did not, it correctly cleared 855. Also ninety per cent. Accuracy: 900 right out of 1000. Ninety per cent.\"\n\nPAUSE HERE. Ask: \"So of everyone this model flags as positive, what proportion actually has the disease? Have a guess.\"\n\nMost rooms guess seventy or eighty per cent. Then reveal: \"Forty-five true positives out of one hundred and forty flagged. Thirty-two per cent. Two out of every three people it flags are well.\"\n\nLet that sit. Then: \"Nothing was wrong with the model. Ninety per cent sensitivity and ninety per cent specificity are respectable. It is the low prevalence that does this, and no vendor's headline figure will tell you.\"\n\nThen the two curves, briefly. ROC and the area under it: does it separate cases from non-cases across all thresholds. Calibration: when it says seventy per cent risk, does the event happen about seventy per cent of the time? A model can discriminate beautifully and be badly calibrated, and then its probabilities are dangerous to act on.", "26": "A breathing space after the evidence slide, and a chance to show that none of this is speculative.\n\nSay: \"Five of these six are supervised learning, mostly deep, mostly on images. That is not a coincidence — images are where labelled examples are abundant and where the pattern is genuinely too subtle to write rules for.\"\n\nPoint at the last box: \"Documentation is the odd one out. It is generative, and it is the one row on this slide that can invent something that was never said. It is also, right now, the fastest-spreading of the six.\"\n\nAsk the room which of these they have personally encountered. In most clinical audiences at least half have met an ambient scribe, and far fewer have knowingly met an imaging model — which is itself worth noting, because imaging models often run silently in the background of a reporting workflow.\n\nKeep this to 3 minutes. It is orientation, not content.", "27": "Start with the distinction: \"Everything so far has been discriminative — it classifies or predicts. Is this lesion malignant. Will this patient deteriorate. Generative AI is different. It produces new content.\"\n\nTOP ROW — the three build stages. Give each one sentence, and name its paradigm, because this is where the earlier slides pay off.\n\n\"Stage one, pre-training. A vast corpus of text. It learns by predicting words that have been hidden from it, so the data supplies its own labels — that is self-supervised learning.\"\n\n\"Stage two, fine-tuning. People write examples of good answers, and it learns from those. Supervised learning.\"\n\n\"Stage three, alignment. Humans rank its outputs, and it is rewarded for producing the preferred ones. That is reinforcement learning, and the acronym you will hear is RLHF — reinforcement learning from human feedback.\"\n\nThen the point: \"Three stages, three different paradigms, one deep generative network. That is why the question 'which paradigm is it?' has no single answer for an LLM.\"\n\nBOTTOM LEFT — the live demonstration, and it is the best thirty seconds in the deck. Read out \"The patient was commenced on...\" and stop. Ask the room to finish it. Somebody says antibiotics. Then: \"That is the mechanism. You just did it. It ranks likely next words and picks one, then does it again. No lookup, no reference.\"\n\nBOTTOM RIGHT — slow right down. \"Notice that none of the three build stages checks whether the output is TRUE. Stage three rewards what humans preferred, which correlates with truth but is not the same thing. So it can be confident, fluent and completely wrong. That is hallucination.\"\n\nClose: \"An LLM is a powerful aid for drafting and summarising, where a human reads the output anyway. It is not a source of clinical truth. Fluency is not accuracy.\"", "29": "Do NOT read all ten. Reading a list of ten aloud guarantees none is remembered.\n\nPick three and say why they matter. The reliable choices are:\n\nNumber 2, because it is the one that changes how people read a vendor's brochure tomorrow morning.\n\nNumber 9, highlighted in amber, because it is the one with medico-legal weight: the clinician remains accountable. AI is decision support, not decision replacement. Say that sentence slowly and do not soften it.\n\nNumber 10, because it is the practical test. If a supplier cannot tell you how the tool was trained, validated and monitored, that is not a documentation gap — it is your answer.\n\nThen say the framing sentence from the appendix: \"These are not reasons to avoid AI. They are the conditions for using it well.\"\n\nLeave the slide up while you take questions. It is the best backdrop for discussion in the deck.", "32": "This is the slide to photograph, and the only one worth printing.\n\nSay: \"If you remember nothing else from today, these five questions will let you hold a sensible conversation with any supplier, any paper, and any enthusiastic colleague.\"\n\nMap each back to the session as you read it, briefly: question one is the data slide, two is supervised learning, three is validation in the lifecycle, four is the confusion matrix, five is monitoring and the dashed loop. Making that link explicit is what turns the session into a tool.\n\nThen the closing line, which is worth delivering carefully: \"None of these questions requires you to understand the mathematics. All of them require somebody to have done the work. If a supplier cannot answer them, you have learned what you needed to know.\"\n\nOffer the deck and the appendix as follow-up reading, then take questions with slide 29 or this one on screen."};
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids){ const e=document.createElement(tag); if(attrs) for(const [k,v] of Object.entries(attrs)){ if(k==='class') e.className=v; else if(k==='html') e.innerHTML=v; else if(k.startsWith('on')) e.addEventListener(k.slice(2),v); else if(v!==false&&v!=null) e.setAttribute(k,v===true?'':v);} for(const k of kids.flat()) if(k!=null&&k!==false) e.append(k.nodeType?k:document.createTextNode(k)); return e; }
+const pad = n => String(n).padStart(2,'0');
+const fmt = s => Math.floor(s/60)+':'+pad(Math.round(s%60));
+const store = { get(k,d){ try{ const v=localStorage.getItem('wrl-'+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }, set(k,v){ try{ localStorage.setItem('wrl-'+k, JSON.stringify(v)); }catch(e){} } };
+
+/* ---- sentences ---- */
+LECTURES.forEach(l => l.slides.forEach(s => { s.sent = s.say.flatMap(p => (p.match(/[^.!?]+[.!?]+["'”’]?\s*|[^.!?]+$/g) || [p]).map(x=>x.trim()).filter(Boolean)); }));
+const WPS = 2.55; // words per second at speed 1
+const words = t => t.split(/\s+/).filter(Boolean).length;
+function lectureSeconds(l, rate){ return l.slides.reduce((a,s)=>a+s.sent.reduce((b,t)=>b+words(t),0),0)/(WPS*rate) + l.slides.length*1.2; }
+
+/* ---- tutor illustration ---- */
+$('#tutor').innerHTML = `
+<svg viewBox="0 0 200 200">
+  <defs><clipPath id="cc"><circle cx="100" cy="100" r="100"/></clipPath></defs>
+  <g clip-path="url(#cc)">
+    <rect width="200" height="200" fill="var(--accent-soft)"/>
+    <g id="tBody">
+      <path d="M14 205 C22 154 58 138 100 136 C142 138 178 154 186 205 Z" fill="#24364A"/>
+      <path d="M84 137 L100 168 L116 137 Z" fill="#EEF4F4"/>
+      <path d="M86 138 L76 175 L100 168 Z M114 138 L124 175 L100 168 Z" fill="#1B2A3A"/>
+      <path d="M80 140 C70 166 80 182 94 184" fill="none" stroke="#9AA9AF" stroke-width="3.2" stroke-linecap="round"/>
+      <path d="M120 140 C130 166 120 182 106 184" fill="none" stroke="#9AA9AF" stroke-width="3.2" stroke-linecap="round"/>
+      <circle cx="100" cy="188" r="6" fill="#B8C4C8" stroke="#7F8E94" stroke-width="1.5"/>
+      <rect x="128" y="160" width="22" height="14" rx="2" fill="#EEF4F4" transform="rotate(-6 139 167)"/>
+      <rect x="88" y="110" width="24" height="32" rx="9" fill="#A9714E"/>
+    </g>
+    <g id="tHead">
+      <ellipse cx="70" cy="92" rx="5" ry="8" fill="#B87C58"/>
+      <ellipse cx="130" cy="92" rx="5" ry="8" fill="#B87C58"/>
+      <ellipse cx="100" cy="88" rx="30" ry="36" fill="#C48A63"/>
+      <path d="M66 92 C60 52 84 38 104 40 C128 40 142 58 134 94 C130 76 122 64 102 63 C84 63 72 72 66 92 Z" fill="#2B211C"/>
+      <path d="M67 88 C62 108 68 124 76 128 L76 96 Z" fill="#2B211C"/>
+      <path d="M133 88 C138 108 132 124 124 128 L124 96 Z" fill="#2B211C"/>
+      <path id="browL" d="M81 76 Q89 72 96 76" fill="none" stroke="#2B211C" stroke-width="2.4" stroke-linecap="round"/>
+      <path id="browR" d="M104 76 Q111 72 119 76" fill="none" stroke="#2B211C" stroke-width="2.4" stroke-linecap="round"/>
+      <g id="eyes"><ellipse cx="89" cy="86" rx="3.2" ry="3.6" fill="#1D1714"/><ellipse cx="111" cy="86" rx="3.2" ry="3.6" fill="#1D1714"/></g>
+      <circle cx="89" cy="86" r="9" fill="none" stroke="#3B3532" stroke-width="1.5"/>
+      <circle cx="111" cy="86" r="9" fill="none" stroke="#3B3532" stroke-width="1.5"/>
+      <path d="M98 86 L102 86" stroke="#3B3532" stroke-width="1.5"/>
+      <path d="M100 90 Q96 100 101 102" fill="none" stroke="#9C6646" stroke-width="1.8" stroke-linecap="round"/>
+      <ellipse id="mouth" cx="100" cy="112" rx="8" ry="1.4" fill="#6E3029"/>
+      <path id="smile" d="M92 111 Q100 115 108 111" fill="none" stroke="#6E3029" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>`;
+const T = { mouth: $('#mouth'), smile: $('#smile'), eyes: $('#eyes'), head: $('#tHead'), open:0, target:0, speaking:false, nextBlink: performance.now()+2500, blinkT:0, hasBoundary:false };
+function pulse(){ T.target = 0.55 + Math.random()*0.45; }
+function tick(now){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (T.speaking && !T.hasBoundary && !reduce){ T.target = 0.35 + 0.55*Math.abs(Math.sin(now/95)) * (0.6+0.4*Math.sin(now/410)); }
+  if (!T.speaking) T.target = 0;
+  T.open += (T.target - T.open)*0.35; T.target *= T.hasBoundary ? 0.86 : 1;
+  const o = reduce ? (T.speaking?0.3:0) : T.open;
+  T.mouth.setAttribute('ry', (1.4 + o*5.2).toFixed(2)); T.mouth.setAttribute('rx', (8 - o*1.5).toFixed(2));
+  T.smile.style.opacity = o > 0.15 ? 0 : 1;
+  if (now > T.nextBlink){ T.blinkT = now; T.nextBlink = now + 2600 + Math.random()*3200; }
+  const b = now - T.blinkT; const sy = b < 140 ? Math.abs(1 - 2*b/140) : 1;
+  T.eyes.setAttribute('transform', `translate(0 ${86*(1-sy)}) scale(1 ${Math.max(0.1,sy)})`);
+  const bob = T.speaking && !reduce ? Math.sin(now/600)*1.2 : 0, tilt = T.speaking && !reduce ? Math.sin(now/1300)*1.6 : 0;
+  T.head.setAttribute('transform', `translate(0 ${bob.toFixed(2)}) rotate(${tilt.toFixed(2)} 100 120)`);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+function setSpeaking(v){ T.speaking = v; $('#tutor').classList.toggle('speaking', v); }
+
+/* ---- voice ---- */
+const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+let voices = [], voice = null, silent = !synth;
+function loadVoices(){
+  if (!synth) return;
+  voices = synth.getVoices().filter(v => /^en/i.test(v.lang));
+  const sel = $('#voiceSel'); const prev = store.get('voice', null);
+  sel.innerHTML = '';
+  sel.append(h('option',{value:'__silent'},'No voice: captions only'));
+  const sorted = voices.slice().sort((a,b)=> (b.lang==='en-GB')-(a.lang==='en-GB') || (b.localService?0:1)-(a.localService?0:1));
+  sorted.forEach(v => sel.append(h('option',{value:v.name}, `${v.name} (${v.lang})`)));
+  let pick = sorted.find(v=>v.name===prev) || sorted.find(v=>v.lang==='en-GB') || sorted[0];
+  if (prev==='__silent') pick = null;
+  voice = pick || null; silent = !voice;
+  sel.value = voice ? voice.name : '__silent';
+  updateVoiceNote();
+}
+function updateVoiceNote(){
+  const n = $('#voiceNote');
+  if (!synth){ n.hidden=false; n.textContent='This browser cannot speak, so the lecture plays with captions only.'; }
+  else if (!voices.length){ n.hidden=false; n.textContent='No English voice was found on this device, so the lecture plays with captions only. Chrome, Edge and Safari usually include one.'; }
+  else n.hidden = true;
+}
+if (synth){ loadVoices(); synth.addEventListener ? synth.addEventListener('voiceschanged', loadVoices) : (synth.onvoiceschanged = loadVoices); setTimeout(()=>{ if(!voices.length) loadVoices(); updateVoiceNote(); }, 1200); }
+else { $('#voiceSel').append(h('option',{value:'__silent'},'Captions only')); updateVoiceNote(); }
+$('#voiceSel').onchange = e => { const v = e.target.value; store.set('voice', v); voice = voices.find(x=>x.name===v) || null; silent = !voice; restartIfPlaying(); };
+$('#rateSel').onchange = () => { renderTime(); restartIfPlaying(); };
+const rate = () => +$('#rateSel').value;
+
+/* ---- player state ---- */
+let L = 0, si = 0, ui = 0, playing = false, token = 0, timers = [];
+const watched = store.get('watched', {}), scores = store.get('scores', {});
+function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
+function lec(){ return LECTURES[L]; }
+function sents(){ return lec().slides[si].sent; }
+
+function renderList(){
+  const list = $('#list'); list.innerHTML = '';
+  LECTURES.forEach((l,i) => {
+    const sc = scores[l.id];
+    list.append(h('button',{class:'lbtn',type:'button','aria-current':String(i===L),onclick:()=>loadLecture(i,false)},
+      h('span',{class:'n'},'Lecture '+(i+1)), h('b',null,l.title),
+      h('span',{class:'meta'}, '≈ '+Math.round(lectureSeconds(l,0.95)/60)+' min · '+l.slides.length+' slides',
+        watched[l.id] ? h('span',{class:'pill acc'},'Watched') : null,
+        sc ? h('span',{class:'pill '+(sc.right===sc.total?'good':'')},`Quiz ${sc.right}/${sc.total}`) : null)));
+  });
+  const n = LECTURES.filter(l=>watched[l.id]).length;
+  $('#overall').textContent = `${n} of ${LECTURES.length} lectures watched`;
+}
+function loadLecture(i, autoplay){
+  stop(); L = i; si = 0; ui = 0;
+  const l = lec();
+  $('#lEyebrow').textContent = `Lecture ${i+1} of ${LECTURES.length} · practise in ${l.station} of AI Ward Round`;
+  $('#lTitle').textContent = l.title;
+  $('#lSub').textContent = `About ${Math.round(lectureSeconds(l,0.95)/60)} minutes, ${l.slides.length} slides, then ${l.quiz.length} questions.`;
+  const tr = $('#track'); tr.innerHTML='';
+  l.slides.forEach((s,k) => tr.append(h('button',{type:'button','aria-label':'Go to slide '+(k+1),title:'Slide '+(k+1),onclick:()=>goSlide(k)}, h('i'))));
+  renderList(); renderSlide(); renderQuiz(); store.set('cur', i);
+  $('#bigPlay').hidden = false;
+  if (autoplay) play();
+}
+function renderSlide(){
+  const s = lec().slides[si];
+  const img = $('#slideImg'); img.src = `slides/s-${pad(s.img)}.jpg`; img.alt = `Slide ${s.img} of the teaching deck`;
+  $('#slideTag').textContent = `${si+1} / ${lec().slides.length}`;
+  const n = NOTES[String(s.img)] || 'No tutor notes for this slide.';
+  $('#notes').textContent = 'Tutor notes · deck slide ' + s.img + '\n\n' + n;
+  $('#prevBtn').disabled = si===0 && ui===0; $('#nextBtn').disabled = si===lec().slides.length-1;
+  renderCaption(-1); renderTrack(); renderTime();
+}
+function renderCaption(charIdx){
+  const cap = $('#cap'); if (!$('#capChk').checked){ cap.hidden = true; return; } cap.hidden = false;
+  const t = sents()[ui] || ''; cap.innerHTML = '';
+  let pos = 0;
+  t.split(/(\s+)/).forEach(part => {
+    if (!part.trim()){ cap.append(part); pos += part.length; return; }
+    const start = pos, end = pos + part.length; pos = end;
+    const cls = charIdx < 0 ? 'w' : (charIdx >= end ? 'w past' : (charIdx >= start ? 'w now' : 'w'));
+    cap.append(h('span',{class:cls},part));
+  });
+}
+function elapsedWords(){ const l = lec(); let w = 0; for (let k=0;k<si;k++) l.slides[k].sent.forEach(t=>w+=words(t)); for (let k=0;k<ui;k++) w += words(sents()[k]); return w; }
+function renderTime(){ const total = lectureSeconds(lec(), rate()); const el = elapsedWords()/(WPS*rate()) + si*1.2; $('#time').textContent = `${fmt(el)} / ${fmt(total)}`; }
+function renderTrack(){
+  const bs = $('#track').querySelectorAll('button');
+  bs.forEach((b,k)=>{ const i = b.querySelector('i'); i.style.width = k<si ? '100%' : k>si ? '0' : (100*ui/Math.max(1,sents().length))+'%'; b.setAttribute('aria-current', String(k===si)); });
+}
+
+function play(){
+  if (playing) return; playing = true; $('#bigPlay').hidden = true; $('#playBtn').textContent = 'Pause';
+  speakCurrent();
+}
+function stop(){
+  playing = false; token++; clearTimers(); if (synth) synth.cancel(); setSpeaking(false);
+  $('#playBtn').textContent = 'Play';
+}
+function restartIfPlaying(){ if (playing){ stop(); play(); } }
+function speakCurrent(){
+  const tok = ++token; clearTimers();
+  const text = sents()[ui]; renderCaption(-1); renderTrack(); renderTime();
+  const est = words(text)/(WPS*rate())*1000;
+  const done = () => { if (tok!==token) return; setSpeaking(false); advance(); };
+  if (!silent && synth && voice){
+    const u = new SpeechSynthesisUtterance(text); u.voice = voice; u.lang = voice.lang; u.rate = rate(); u.pitch = 1;
+    T.hasBoundary = false;
+    u.onstart = () => { if (tok===token) setSpeaking(true); };
+    u.onboundary = e => { if (tok!==token || e.name==='sentence') return; T.hasBoundary = true; pulse(); renderCaption(e.charIndex); };
+    u.onend = done;
+    u.onerror = e => { if (tok!==token) return; if (e.error==='interrupted' || e.error==='canceled') return; silentRun(tok, text, est); };
+    synth.speak(u);
+    timers.push(setTimeout(()=>{ if (tok===token && synth.speaking===false && !T.speaking){ /* never started: fall back */ silentRun(tok, text, est); } }, 2500));
+    timers.push(setTimeout(done, est*2.2 + 4000)); // watchdog for engines that never fire onend
+  } else silentRun(tok, text, est);
+}
+function silentRun(tok, text, est){
+  if (tok!==token) return; clearTimers(); T.hasBoundary = false; setSpeaking(true);
+  const parts = text.split(/(\s+)/); let pos = 0; const starts = [];
+  parts.forEach(p=>{ if (p.trim()) starts.push(pos); pos += p.length; });
+  starts.forEach((c,k)=> timers.push(setTimeout(()=>{ if (tok===token) renderCaption(c); }, est*k/starts.length)));
+  timers.push(setTimeout(()=>{ if (tok!==token) return; setSpeaking(false); advance(); }, est + 250));
+}
+function advance(){
+  if (!playing) return;
+  ui++;
+  if (ui >= sents().length){
+    if (si >= lec().slides.length-1){ finishLecture(); return; }
+    si++; ui = 0; renderSlide();
+    const tok = token; timers.push(setTimeout(()=>{ if (playing && tok===token) speakCurrent(); }, 1200)); return;
+  }
+  speakCurrent();
+}
+function finishLecture(){
+  stop(); watched[lec().id] = true; store.set('watched', watched); renderList();
+  ui = sents().length-1; renderTrack(); renderCaption(-1);
+  const cap = $('#cap'); cap.hidden = false; cap.innerHTML = '<b>End of the lecture.</b> Now answer the questions below.';
+  $('#quiz').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+}
+function goSlide(k){ const was = playing; stop(); si = clamp(k,0,lec().slides.length-1); ui = 0; renderSlide(); if (was) play(); }
+const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+$('#playBtn').onclick = () => playing ? stop() : play();
+$('#bigPlay').onclick = () => play();
+$('#prevBtn').onclick = () => goSlide(ui>0 && playing ? si : si-1);
+$('#nextBtn').onclick = () => goSlide(si+1);
+$('#capChk').onchange = () => renderCaption(-1);
+$('#notesChk').onchange = e => { $('#notes').hidden = !e.target.checked; store.set('notes', e.target.checked); };
+if (store.get('notes', false)){ $('#notesChk').checked = true; $('#notes').hidden = false; }
+document.addEventListener('keydown', e => { if (e.target.closest('select,input,textarea')) return; if (e.code==='Space' && !e.target.closest('button')){ e.preventDefault(); playing?stop():play(); } });
+
+/* ---- quiz ---- */
+function renderQuiz(){
+  const l = lec(), q = $('#quiz'); q.innerHTML = '';
+  const res = l.quiz.map(()=>null);
+  q.append(h('div',null, h('div',{class:'eyebrow'},'Check your understanding'), h('h3',null,`Questions on lecture ${L+1}`)));
+  const scoreEl = h('div',{class:'score'});
+  function upd(){ const ans = res.filter(x=>x!==null).length, right = res.filter(x=>x===true).length;
+    scoreEl.innerHTML = '';
+    scoreEl.append(h('span',{class:'pill '+(ans===l.quiz.length && right===ans ? 'good':'acc')}, `${right} of ${l.quiz.length} right first time`));
+    if (ans===l.quiz.length){ scores[l.id] = {right, total:l.quiz.length}; store.set('scores', scores); renderList();
+      if (L < LECTURES.length-1) scoreEl.append(h('button',{class:'btn primary',type:'button',onclick:()=>{ loadLecture(L+1,false); window.scrollTo({top:0}); }},`Next: lecture ${L+2}`));
+      else scoreEl.append(h('span',null,'You have finished the course. Try the matching stations in AI Ward Round to practise.')); } }
+  l.quiz.forEach((it,k) => {
+    const fb = h('div',{class:'fb'}); const opts = h('div',{class:'qq'}, h('p',{class:'q'}, `${k+1}. ${it.q}`));
+    it.o.forEach((o,j) => { const b = h('button',{class:'opt',type:'button'}, o);
+      b.onclick = () => { opts.querySelectorAll('.opt').forEach(x=>x.classList.remove('right','wrong'));
+        if (j===it.a){ b.classList.add('right'); fb.innerHTML = '<b>Right.</b> '+it.e; if (res[k]===null) res[k]=true; }
+        else { b.classList.add('wrong'); fb.innerHTML = '<b>Not quite.</b> Have another go.'; if (res[k]===null) res[k]=false; }
+        upd(); };
+      opts.append(b); });
+    opts.append(fb); q.append(opts);
+  });
+  q.append(scoreEl); upd();
+}
+
+/* ---- start ---- */
+const startAt = clamp(+store.get('cur',0)||0, 0, LECTURES.length-1);
+loadLecture(startAt, false);
+renderCaption(-1);
+</script>
+
+</body>
+</html>
