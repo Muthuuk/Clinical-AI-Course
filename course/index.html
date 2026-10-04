@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clinical AI Course</title>
+<meta name="description" content="Short narrated lessons, case simulations and a personal learning index for every chapter of A Clinical Guide to AI in Healthcare.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: course header with overall learning index, then a grid of chapter cards (available / coming soon). */
+:root{
+  --bg:#F3F6F6; --surface:#FFFFFF; --surface-2:#E9EFEF; --ink:#14232A; --muted:#55686D; --line:#D2DCDD;
+  --accent:#0E6B66; --accent-soft:#D6ECEA; --signal:#B97A06; --signal-soft:#F7EBD2; --good:#2C7A4B; --good-soft:#DCEFE3;
+  --f-display:"Newsreader", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17; --good:#5CBB84; --good-soft:#18352A; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17; --good:#5CBB84; --good-soft:#18352A; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;margin:0}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:16px;padding-block:28px 60px;display:flex;flex-direction:column;gap:22px}
+.eyebrow{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.lede{color:var(--muted);max-width:70ch;margin-top:8px}
+.summary{display:flex;gap:20px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.big{font-family:var(--f-mono);font-size:2.6rem;font-weight:600;color:var(--accent);line-height:1}
+.stats{display:flex;gap:22px;flex-wrap:wrap}
+.stats div{display:flex;flex-direction:column}
+.stats small{font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.stats b{font-size:1.1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.ch{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px;text-decoration:none;color:inherit;min-width:0}
+a.ch:hover{border-color:var(--accent)}
+.ch .n{font-family:var(--f-mono);font-size:.76rem;color:var(--accent)}
+.ch b{font-size:1rem;line-height:1.3}
+.ch .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.8rem;color:var(--muted);margin-top:auto}
+.ch.soon{opacity:.55}
+.bar{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.pill{display:inline-flex;border-radius:99px;padding:2px 9px;font-size:.76rem;font-weight:600;background:var(--surface-2)}
+.pill.good{background:var(--good-soft);color:var(--good)} .pill.acc{background:var(--accent-soft);color:var(--accent)}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.how div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.how b{display:block;margin-bottom:3px}
+.how span{font-size:.88rem;color:var(--muted)}
+.foot{font-size:.8rem;color:var(--muted);max-width:80ch}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Online course for clinicians</div>
+    <h1 style="font-size:2.3rem;margin-top:4px">A Clinical Guide to AI in Healthcare</h1>
+    <p class="lede">Short lessons narrated by Sam, your virtual tutor, with a case to try after each one. Every chapter sets a plan that fits your time and pace, and keeps a learning index so you can see where you are.</p>
+  </header>
+  <section class="summary" aria-label="Your course progress">
+    <div><div class="big" id="ovIdx">—</div><small style="color:var(--muted)">course learning index</small></div>
+    <div class="stats"><div><small>Level</small><b id="ovLvl">Not started</b></div><div><small>Chapters started</small><b id="ovStarted">0</b></div><div><small>Final tests taken</small><b id="ovTests">0</b></div><div><small>Lessons finished</small><b id="ovLessons">0</b></div></div>
+  </section>
+  <section class="how" aria-label="How each chapter works">
+    <div><b>1. Start</b><span>Three quick questions and your available time set your path and pace.</span></div>
+    <div><b>2. Short lessons</b><span>About two minutes each. Listen to Sam, or read at your own speed.</span></div>
+    <div><b>3. Check and case</b><span>A quick check, a second chance if needed, then a clinical case to decide.</span></div>
+    <div><b>4. Final test and index</b><span>Your learning index shows knowledge, applying it, self-awareness and completion.</span></div>
+  </section>
+  <section><h2 style="font-size:1.4rem;margin-bottom:10px">Chapters</h2><div class="grid" id="grid"></div></section>
+  <p class="foot">Your progress is stored in this browser only. Nothing is sent anywhere. Use the same browser and device to keep your record, and download a certificate from each chapter as proof. <a href="../index.html">AI Ward Round simulations</a></p>
+</div>
+<script>
+const UNITS = [{"id": "appendix-a", "num": "A", "title": "An Introduction to AI for the Clinical Expert"}, {"id": "ch01", "num": "1", "title": "Modern Healthcare and the Case for AI"}, {"id": "ch02", "num": "2", "title": "A Taxonomy of Clinical AI"}, {"id": "ch03", "num": "3", "title": "Data, Validation, and Evidence"}, {"id": "ch04", "num": "4", "title": "Building a Clinical AI System"}, {"id": "ch05", "num": "5", "title": "Trust, Security, and Assurance for Clinical AI"}, {"id": "ch06", "num": "6", "title": "AI Tools for Daily Clinical Practice: The Toothbrush Test"}, {"id": "ch07", "num": "7", "title": "Computer Vision in Medicine"}, {"id": "ch08", "num": "8", "title": "Time-Series and Physiological Signal AI"}, {"id": "ch09", "num": "9", "title": "Language, NLP, and Generative AI in the Clinic"}, {"id": "ch10", "num": "10", "title": "Predictive, Genomic, and Precision-Medicine AI"}, {"id": "ch11", "num": "11", "title": "AI Across the Life Course and Population Health"}, {"id": "ch12", "num": "12", "title": "Explainability, Human–AI Interaction, and Accountability"}, {"id": "ch13", "num": "13", "title": "Federated Learning and Privacy-Preserving AI"}, {"id": "ch14", "num": "14", "title": "Data Privacy, Regulation, and Compliance"}, {"id": "ch15", "num": "15", "title": "Ethics, Equity, and Bias in Clinical AI"}, {"id": "ch16", "num": "16", "title": "Implementation, Organisational Readiness, and Failure Analysis"}, {"id": "ch17", "num": "17", "title": "Lessons from the Field"}, {"id": "ch18", "num": "18", "title": "Future Directions: Agentic AI"}, {"id": "ch19", "num": "19", "title": "Clinical AI by Design"}];
+const grid = document.getElementById('grid');
+function h(tag, attrs, ...kids){ const e=document.createElement(tag); if(attrs) for(const [k,v] of Object.entries(attrs)){ if(k==='class') e.className=v; else e.setAttribute(k,v);} for(const k of kids.flat()) if(k!=null&&k!==false) e.append(k.nodeType?k:document.createTextNode(k)); return e; }
+function read(id){ try { return JSON.parse(localStorage.getItem('cg:'+id) || 'null'); } catch(e){ return null; } }
+const LEVELS = [[0,'Novice'],[40,'Advanced beginner'],[60,'Competent'],[80,'Proficient']];
+let started = 0, tests = 0, lessons = 0, sum = 0;
+UNITS.forEach(u => {
+  const s = read(u.id), m = s && s.meta;
+  const label = u.num==='A' ? 'Appendix A' : 'Chapter '+u.num;
+  const card = h('a',{class:'ch soon',href:u.id+'/index.html','aria-label':label+': '+u.title}, h('span',{class:'n'},label), h('b',null,u.title));
+  const meta = h('div',{class:'meta'}, h('span',null,'Checking…'));
+  card.append(m ? h('div',{class:'bar'}, h('i',{style:`width:${Math.round(100*m.done/m.lessons)}%`})) : null, meta);
+  grid.append(card);
+  if (m){ started++; lessons += m.done; sum += m.index; if (m.test) tests++; }
+  fetch(u.id+'/index.html',{method:'HEAD'}).then(r => {
+    meta.innerHTML='';
+    if (!r.ok) throw 0;
+    card.classList.remove('soon');
+    if (m) meta.append(h('span',{class:'pill '+(m.test?'good':'acc')}, `Index ${m.index} · ${m.level}`), h('span',null, `${m.done}/${m.lessons} lessons`));
+    else meta.append(h('span',{class:'pill acc'},'Start'), h('span',null,'Not started'));
+  }).catch(()=>{ meta.innerHTML=''; card.removeAttribute('href'); card.setAttribute('aria-disabled','true'); meta.append(h('span',null,'Coming soon')); });
+});
+if (started){ const avg = Math.round(sum/started); document.getElementById('ovIdx').textContent = avg; document.getElementById('ovLvl').textContent = LEVELS.filter(l=>avg>=l[0]).pop()[1]; }
+document.getElementById('ovStarted').textContent = started; document.getElementById('ovTests').textContent = tests; document.getElementById('ovLessons').textContent = lessons;
+</script>
+
+</body>
+</html>
