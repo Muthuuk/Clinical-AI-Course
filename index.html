@@ -89,14 +89,14 @@ UNITS.forEach(u => {
   const label = u.num==='A' ? 'Appendix A' : 'Chapter '+u.num;
   const card = h('a',{class:'ch soon',href:u.id+'/index.html','aria-label':label+': '+u.title}, h('span',{class:'n'},label), h('b',null,u.title));
   const meta = h('div',{class:'meta'}, h('span',null,'Checking…'));
-  card.append(m ? h('div',{class:'bar'}, h('i',{style:`width:${Math.round(100*m.done/m.lessons)}%`})) : null, meta);
+  if (m && m.lessons) card.append(h('div',{class:'bar'}, h('i',{style:`width:${Math.round(100*(m.done||0)/m.lessons)}%`})));
+  card.append(meta);
   grid.append(card);
-  if (m){ started++; lessons += m.done; sum += m.index; if (m.test) tests++; }
-  fetch(u.id+'/index.html',{method:'HEAD'}).then(r => {
-    meta.innerHTML='';
-    if (!r.ok) throw 0;
-    card.classList.remove('soon');
-    if (m) meta.append(h('span',{class:'pill '+(m.test?'good':'acc')}, `Index ${m.index} · ${m.level}`), h('span',null, `${m.done}/${m.lessons} lessons`));
+  if (m){ started++; lessons += (m.done||0); sum += (m.index||0); if (m.test) tests++; }
+  fetch(u.id+'/index.html', {cache:'no-store'}).then(r => r.ok ? r.text() : Promise.reject()).then(txt => {
+    if (!/Chapter|Appendix/.test(txt)) throw 0;
+    meta.innerHTML=''; card.classList.remove('soon');
+    if (m) meta.append(h('span',{class:'pill '+(m.test?'good':'acc')}, `Index ${m.index||0} · ${m.level||'Novice'}`), h('span',null, `${m.done||0}/${m.lessons||'?'} lessons`));
     else meta.append(h('span',{class:'pill acc'},'Start'), h('span',null,'Not started'));
   }).catch(()=>{ meta.innerHTML=''; card.removeAttribute('href'); card.setAttribute('aria-disabled','true'); meta.append(h('span',null,'Coming soon')); });
 });
