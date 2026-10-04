@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chapter 2 · A Taxonomy of Clinical AI</title>
+<meta name="description" content="Three families of clinical AI, predictive, generative and agentic: what each does, how each fails, and how much watching each needs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky top bar (course link, chapter, live Learning Index) + sticky top menu of lessons.
+   Each lesson = Watch (slide, Sam, captions) -> Key point -> Quick check with confidence -> Case simulation.
+   Start tab sets the personal plan; Final tab is the chapter case test; Progress tab shows the index and advice. */
+:root{
+  --bg:#F3F6F6; --surface:#FFFFFF; --surface-2:#E9EFEF; --ink:#14232A; --muted:#55686D; --line:#D2DCDD;
+  --accent:#0E6B66; --accent-soft:#D6ECEA; --signal:#B97A06; --signal-soft:#F7EBD2;
+  --good:#2C7A4B; --good-soft:#DCEFE3; --bad:#AE3434; --bad-soft:#F6DEDE; --info:#2D5B8A; --info-soft:#DDE8F4;
+  --f-display:"Newsreader", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --info:#7FA9D8; --info-soft:#1B2A3B; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --info:#7FA9D8; --info-soft:#1B2A3B; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;margin:0}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+button,select,input{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:16px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:12px;padding-block:9px;flex-wrap:wrap}
+.bar .home{font-size:.85rem;font-weight:600;text-decoration:none;white-space:nowrap}
+.bar h1{font-size:1.2rem;flex:1 1 240px;min-width:0}
+.bar h1 small{display:block;font-family:var(--f-body);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.idx{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 12px 4px 6px;cursor:pointer}
+.idx b{font-family:var(--f-mono);font-size:1rem;background:var(--accent);color:var(--surface);border-radius:99px;padding:1px 8px}
+.idx span{font-size:.82rem;color:var(--muted)}
+.menu{display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
+.menu button{flex:none;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;cursor:pointer;font-size:.86rem;white-space:nowrap}
+.menu button[aria-current="true"]{background:var(--accent);color:var(--surface);border-color:var(--accent);font-weight:600}
+.menu .dot{width:9px;height:9px;border-radius:50%;border:1.5px solid currentColor;opacity:.6}
+.menu .dot.done{background:var(--good);border-color:var(--good);opacity:1}
+.menu .dot.part{background:var(--signal);border-color:var(--signal);opacity:1}
+main{padding-block:20px 60px;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.card h3{font-size:1.25rem;margin-bottom:6px}
+.eyebrow{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.lede{color:var(--muted);max-width:68ch}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:.92rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.small{padding:5px 10px;font-size:.84rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer;font-size:.88rem;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:600}
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.steps span{font-size:.8rem;padding:3px 10px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.steps span.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.steps span.ok{background:var(--good-soft);color:var(--good);font-weight:600}
+.stage{position:relative;aspect-ratio:16/9;width:100%;background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.slidetag{position:absolute;left:10px;top:10px;background:rgba(10,30,34,.78);color:#fff;font-size:.75rem;padding:3px 9px;border-radius:99px;font-family:var(--f-mono)}
+.bigplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,20,22,.35);border:0;cursor:pointer;color:#fff;flex-direction:column;gap:8px;font-weight:600}
+.bigplay span.c{width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.speaker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;margin-top:10px}
+.tutor{width:96px;aspect-ratio:1/1;border-radius:50%;background:var(--accent-soft);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.tutor.speaking{box-shadow:0 0 0 3px var(--accent)}
+.tutor svg{width:100%;height:100%;display:block}
+.tutor-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;color:var(--muted)}
+.cap{min-height:4.4em;background:var(--surface-2);border-radius:8px;padding:10px 14px;font-size:1.06rem}
+.cap .w{color:var(--muted)} .cap .w.past{color:var(--ink)} .cap .w.now{background:var(--signal-soft);color:var(--ink);border-radius:3px;box-shadow:0 0 0 2px var(--signal-soft)}
+.read{background:var(--surface-2);border-radius:8px;padding:12px 16px;display:flex;flex-direction:column;gap:8px;font-size:1.04rem;max-width:75ch}
+.ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.ctrls .grow{flex:1}
+.ctrls select{padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--surface);max-width:210px}
+.ctrls label{font-size:.84rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.key{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:var(--signal-soft);border-radius:10px;padding:12px 16px}
+.key b.k{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--signal);padding-top:3px}
+.key p{font-weight:600;max-width:72ch}
+.plain{background:var(--info-soft);border-radius:10px;padding:12px 16px}
+.plain b{display:block;font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--info);margin-bottom:4px}
+.plain ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.q{font-weight:600;font-size:1.04rem;max-width:72ch;margin-bottom:8px}
+.conf{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.86rem;color:var(--muted);margin-bottom:8px}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 13px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.part{border-color:var(--signal);background:var(--signal-soft)}
+.fb{font-size:.94rem;max-width:72ch;margin-top:8px}
+.case-set{border-left:3px solid var(--accent);padding:4px 0 4px 12px;color:var(--muted);margin-bottom:12px;max-width:75ch}
+.stepbox{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}.tutor{width:72px}}
+.gauge{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.gauge svg{width:150px;height:150px;flex:none}
+.dims{display:flex;flex-direction:column;gap:9px;flex:1;min-width:240px}
+.dim{display:grid;grid-template-columns:minmax(120px,170px) 1fr 48px;gap:10px;align-items:center;font-size:.9rem}
+.dim .track{height:12px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.dim .fill{height:100%;background:var(--accent);border-radius:99px}
+.dim output{font-family:var(--f-mono);text-align:right;font-size:.85rem}
+.ladder{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:12px}
+.ladder div{border-radius:8px;padding:8px;font-size:.8rem;text-align:center;background:var(--surface-2);color:var(--muted)}
+.ladder div.on{background:var(--accent);color:var(--surface);font-weight:700}
+@media (max-width:560px){.ladder{grid-template-columns:repeat(2,minmax(0,1fr))}}
+table.t{width:100%;border-collapse:collapse;font-size:.9rem}
+table.t th,table.t td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+table.t th{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+.pill{display:inline-flex;border-radius:99px;padding:2px 9px;font-size:.78rem;font-weight:600;background:var(--surface-2)}
+.pill.good{background:var(--good-soft);color:var(--good)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.warn{background:var(--signal-soft);color:var(--signal)} .pill.acc{background:var(--accent-soft);color:var(--accent)}
+.advice{display:flex;flex-direction:column;gap:8px}
+.advice div{display:flex;gap:10px;align-items:flex-start;background:var(--surface-2);border-radius:8px;padding:9px 12px}
+.plan{display:flex;flex-direction:column;gap:6px}
+.plan div{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.plan b{min-width:90px}
+.foot{font-size:.8rem;color:var(--muted);max-width:80ch}
+input[type=text]{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);min-width:0;width:260px;max-width:100%}
+@media (max-width:600px){.bar{gap:8px;padding-block:6px}.bar h1{font-size:1rem;flex-basis:150px}.bar h1 small{font-size:.66rem}.idx span{display:none}.bar .home{font-size:.78rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top"><div class="wrap">
+  <div class="bar">
+    <a class="home" href="../index.html">← All chapters</a>
+    <h1 id="chTitle"><small id="chNum"></small><span></span></h1>
+    <button class="idx" id="idxChip" type="button" title="Your learning index for this chapter"><b id="idxVal">0</b><span id="idxLvl">Novice</span></button>
+  </div>
+  <nav class="menu" id="menu" aria-label="Chapter sections"></nav>
+</div></header>
+<main class="wrap" id="main"></main>
+
+<script>
+const CH = {"id": "ch02", "num": "2", "title": "A Taxonomy of Clinical AI", "summary": "Three families of clinical AI, predictive, generative and agentic: what each does, how each fails, and how much watching each needs.", "outcomes": ["Name the three families of clinical AI and say what each one does: sorts, writes or acts", "Explain in plain words what machine learning and deep learning are, and the three ways a machine learns", "Spot the typical failure of each family: a quiet wrong number, a confident wrong sentence, a mistake that snowballs", "Choose the right kind of watching for each family: monitor, review or gate", "Match a clinical task to the least autonomous tool that does the job"], "starter": [{"q": "A tool drafts a discharge letter from the notes. Which family is it?", "o": ["Predictive, it sorts", "Generative, it writes", "Agentic, it acts"], "a": 1}, {"q": "A tool gives a risk score with the same confident look whether it is right or wrong. What is the danger?", "o": ["A silent error nobody is prompted to doubt", "The tool will crash", "The tool will refuse to answer"], "a": 0}, {"q": "A system plans a patient's work-up and places orders across several steps. Before any order reaches the patient, what should happen?", "o": ["Nothing, that is the point of automation", "The system should check its own work", "A clinician approves it at a human gate"], "a": 2}], "lessons": [{"title": "Three machines, one word", "minutes": 2, "slides": [{"img": 3, "say": ["Welcome to Chapter 2, A Taxonomy of Clinical AI. I'm Sam, your tutor.", "A taxonomy is just a way of sorting things into named groups. This chapter sorts clinical AI into three families. No maths needed.", "Picture one clinician on one shift. She reads a discharge summary drafted by software. She gets an alert that a patient is getting worse. An assistant puts together a referral.", "All three are called AI. They look alike. Underneath, they are different machines that fail in different ways.", "A tool that grades eye photographs can give a wrong grade. A tool that writes can give you a confident sentence that is simply untrue, and it looks believable.", "Call them all just AI and you will choose the wrong safeguards. The right name gives the right expectations, and that keeps patients safe."]}, {"img": 4, "say": ["Here is the map for the whole chapter. One root, three families.", "Blue is predictive. It sorts. It turns an input into a label or a risk score, such as grading an eye photograph.", "Violet is generative. It writes. It produces something new, such as a discharge summary.", "Teal is agentic. It acts. It plans and carries out several steps, such as a triage assistant.", "Follow the arrow left to right. The further right, the more the machine does on its own, and the more carefully you must watch it."]}], "keyPoint": "Three families: predictive sorts, generative writes, agentic acts. Naming the family tells you how it fails and how closely to watch it.", "plain": ["Predictive: sorts an input into a label or score.", "Generative: writes something new, like a letter or summary.", "Agentic: plans and acts across several steps.", "Further right on the map means more autonomy and more watching."], "check": {"q": "Which family's job is best summed up as 'it writes'?", "o": ["Predictive", "Agentic", "Generative"], "a": 2, "e": "Generative systems, including chatbots, produce new text such as drafts, summaries and answers.", "retry": {"q": "Why does the chapter say naming the family is a clinical skill?", "o": ["It helps with billing codes", "Each family fails differently, so the name tells you which safeguard it needs", "Clinicians must learn to program"], "a": 1, "e": "The name sets the right expectations, and the right expectations keep patients safe."}}, "scenario": {"title": "One shift, three tools", "setting": "You are a ward sister. Over one shift you meet a deterioration alert, a software-drafted discharge summary, and an assistant that gathers results and books a follow-up.", "steps": [{"prompt": "Which of these could tell you something that nobody ever recorded?", "choices": [{"t": "The deterioration alert", "s": 0, "fb": "No. It gives a score. It does not write sentences."}, {"t": "The drafted discharge summary", "s": 2, "fb": "Right. A tool that writes can produce a confident sentence that is untrue."}, {"t": "None of them, they all use real data", "s": 0, "fb": "No. Generative tools create new text and can invent things."}]}, {"prompt": "Which one does the most on its own, and so needs the closest watching?", "choices": [{"t": "The assistant that gathers results and books follow-up", "s": 2, "fb": "Right. It acts across several steps, so it sits furthest right on the map."}, {"t": "The deterioration alert", "s": 0, "fb": "No. It sorts an input into a score and then stops."}, {"t": "The discharge summary tool", "s": 1, "fb": "It needs every draft read, but it does not act on the patient."}]}]}}, {"title": "Bigger output, bigger risk", "minutes": 2, "slides": [{"img": 6, "say": ["This table puts the three families side by side. Read each column top to bottom.", "A predictive system maps an input to a label or score. A sepsis early-warning alert is one example. Its strength is fast, consistent detection. Its risk is that its scores quietly stop matching reality. So you check and keep checking its numbers.", "A generative system produces new text, such as a draft clinic letter. Its strength is fluent writing and pulling information together. Its risk is output that sounds right but is false. So someone reads every output.", "An agentic system plans and acts over several steps, such as organising a work-up. Its strength is handling multi-step work. Its risk is that mistakes build up from step to step. So every action passes through a gate.", "Now read across the bottom. As the output grows from a score, to a paragraph, to a chain of actions, the risk and the watching both grow with it.", "Remember the three risks as a trio. A quiet wrong number. A confident wrong sentence. A wrong step that snowballs.", "This is not a reason for fear. It is the reason the names are useful. They tell you which question to ask of each tool."]}], "keyPoint": "As the output grows from a score to a paragraph to a chain of actions, the risk and the oversight needed grow with it.", "plain": ["Predictive: a quiet wrong number. Keep checking its scores.", "Generative: a confident wrong sentence. Read every output.", "Agentic: a wrong step that snowballs. Gate every action.", "Bigger output means bigger risk and more watching."], "check": {"q": "Which pairing of family and main risk is correct?", "o": ["Predictive: a confident wrong sentence", "Generative: a wrong sentence that sounds right", "Agentic: a quiet wrong number"], "a": 1, "e": "Generative tools risk believable falsehoods. Predictive tools risk a quiet wrong number, and agentic tools risk a snowballing mistake.", "retry": {"q": "As a tool's output grows from a score to a chain of actions, what happens to the watching it needs?", "o": ["It stays the same", "It goes down", "It goes up"], "a": 2, "e": "Risk and oversight rise together with the size of the output."}}, "scenario": {"title": "The procurement shortlist", "setting": "Your trust is shortlisting three tools: a sepsis alert, a clinic letter drafter, and an assistant that organises pre-operative work-ups. A manager proposes the same oversight plan for all three.", "steps": [{"prompt": "What do you say?", "choices": [{"t": "Fine, they are all AI", "s": 0, "fb": "No. Each family fails differently and needs different watching."}, {"t": "Each needs its own plan: check scores, read every letter, gate every action", "s": 2, "fb": "Right. Monitor, review and gate are different habits for different risks."}, {"t": "Use the strictest plan for all three", "s": 1, "fb": "Safe, but reading every sepsis score would defeat the alert's purpose."}]}, {"prompt": "Which tool needs the heaviest oversight?", "choices": [{"t": "The sepsis alert", "s": 0, "fb": "No. It produces a score and stops."}, {"t": "The letter drafter", "s": 1, "fb": "It needs every draft read, but it does not act on patients."}, {"t": "The work-up assistant", "s": 2, "fb": "Right. It acts across steps, so every action must pass a human gate."}]}]}}, {"title": "What they all share", "minutes": 2, "slides": [{"img": 7, "say": ["Before we look at each family, let's see what they have in common. Read this picture from top to bottom.", "At the top is machine learning. That means a computer that learns patterns from examples, instead of following rules someone wrote by hand.", "Inside it are three ways of learning: supervised, unsupervised and reinforcement. We will come to those next.", "Below that is deep learning. It is the most powerful kind of machine learning. It uses many layers of calculation and works out for itself which features in the data matter.", "A common mix-up: deep learning is not something separate from machine learning. It is one kind of it.", "The stack then splits into two applied fields. Natural language processing works with text, such as notes and letters. Computer vision works with images, such as scans and slides.", "At the bottom are everyday clinical tasks: triage, help with diagnosis, documentation, monitoring and decision support.", "Here is one path through the stack. An early-warning tool learns from past cases where the outcome is known. It is built as a deep network. It reads numbers, not pictures. And it feeds the monitoring task.", "The one-line takeaway: deep learning is the shared engine. The families differ only in what they are asked to produce."]}], "keyPoint": "All three families rest on machine learning and deep learning. They differ only in what they are asked to produce.", "plain": ["Machine learning: learns patterns from examples, not hand-written rules.", "Deep learning: the most powerful kind of machine learning, with many layers. It is part of machine learning, not separate.", "Language processing works with text; computer vision works with images.", "Same engine, different jobs."], "check": {"q": "How does deep learning relate to machine learning?", "o": ["It is one kind of machine learning", "It replaced machine learning", "It is a kind of computer vision"], "a": 0, "e": "Deep learning is the most powerful kind of machine learning. It sits inside it, not beside it.", "retry": {"q": "Which applied field works with scans and slides?", "o": ["Natural language processing", "Computer vision", "Reinforcement learning"], "a": 1, "e": "Computer vision works with images. Natural language processing works with text."}}, "scenario": {"title": "The supplier's buzzwords", "setting": "A supplier presents a tool that reads pathology slides. The brochure says it uses 'deep learning, not machine learning' and 'natural language processing'.", "steps": [{"prompt": "What is wrong with 'deep learning, not machine learning'?", "choices": [{"t": "Nothing, they are rivals", "s": 0, "fb": "No. Deep learning is one kind of machine learning."}, {"t": "Deep learning is part of machine learning, so the claim does not make sense", "s": 2, "fb": "Right. It is a sign the brochure is using words loosely."}, {"t": "Deep learning is older and weaker", "s": 0, "fb": "No. Deep learning is the most powerful kind of machine learning."}]}, {"prompt": "A tool that reads slides belongs to which applied field?", "choices": [{"t": "Computer vision", "s": 2, "fb": "Right. Slides are images, so this is computer vision, not language processing."}, {"t": "Natural language processing", "s": 0, "fb": "No. That works with text, not pictures."}, {"t": "Both equally", "s": 1, "fb": "Only if it also reads the written report. Reading slides is computer vision."}]}]}}, {"title": "Three ways to learn", "minutes": 2, "slides": [{"img": 9, "say": ["A machine can be taught in three ways. The only real difference is the kind of feedback it gets.", "Supervised learning learns from labelled examples. Labelled just means past cases where we already know the answer. Show it thousands of scans marked normal or abnormal, and it learns to label new ones.", "This is the workhorse of clinical AI, because medical records already contain the answers: a confirmed diagnosis, a known length of stay.", "The catch: it needs accurate labels, and lots of them. A supervised tool is only ever as good as its labels.", "If past labels were skewed, the tool learns the skew. One real tool under-served Black patients this way, because it leaned on health-cost data that tracked race.", "Unsupervised learning gets no labels. It just groups similar cases, for example sorting patients into subtypes. A person still has to work out what the groups mean.", "Reinforcement learning learns by trial and feedback. It suits decisions made in sequence, such as adjusting a treatment over time. But it is hard to test safely on real patients.", "One more warning. A tool that shines on tidy study data can stumble on messy real-world data.", "For the ward, the lesson is this. Knowing how a tool learned is your first clue to where it might go wrong."]}], "keyPoint": "Supervised learns from labelled answers, unsupervised finds groups, reinforcement learns by trial. A supervised tool is only as good as its labels.", "plain": ["Supervised: learns from past cases with known answers. Most clinical AI.", "Unsupervised: groups similar cases. A person must say what the groups mean.", "Reinforcement: learns by trial and feedback. Hard to test safely on patients.", "Skewed labels teach a skewed tool."], "check": {"q": "Why is supervised learning the workhorse in hospitals?", "o": ["It needs no data", "Records already contain the answers, such as confirmed diagnoses", "It is the only kind that works with images"], "a": 1, "e": "Supervised learning needs past cases with known answers, and medical records naturally provide them.", "retry": {"q": "A tool groups patients into subtypes without being told any answers. Which way of learning is this?", "o": ["Supervised", "Reinforcement", "Unsupervised"], "a": 2, "e": "No labels, just finding groups: that is unsupervised learning."}}, "scenario": {"title": "The research proposal", "setting": "A research team asks your ethics committee to approve a tool that learns the best insulin doses by trying doses on patients and watching the results.", "steps": [{"prompt": "Which way of learning is this, and what is the concern?", "choices": [{"t": "Reinforcement learning, and it is hard to test safely on real patients", "s": 2, "fb": "Right. Learning by trial and feedback on patients is the chapter's named concern."}, {"t": "Supervised learning, and the labels may be wrong", "s": 0, "fb": "No. Nobody gives it the right dose in advance. It learns by trying."}, {"t": "Unsupervised learning, and the groups may mean nothing", "s": 0, "fb": "No. It is not grouping cases."}]}, {"prompt": "The team also offers a supervised tool that learned from past records of which patients were readmitted. What do you ask first?", "choices": [{"t": "How accurate are the labels, and were they skewed?", "s": 2, "fb": "Right. A supervised tool is only as good as its labels, and skewed labels teach a skewed tool."}, {"t": "How fast does it run?", "s": 0, "fb": "Speed is not the key question."}, {"t": "How many records did it use?", "s": 1, "fb": "Useful, but quality of the labels matters more than their number."}]}]}}, {"title": "Predictive: they sort", "minutes": 3, "slides": [{"img": 10, "say": ["Now the first family in detail: predictive systems. This is the oldest and best-tested family.", "Follow the boxes left to right. An input arrives, such as an eye photograph. It is turned into numbers. The model scores them. Out comes a probability or a label.", "In the example, the tool gives a 0.93 chance of disease needing referral. The clinician confirms. It scored the image. It did not write anything.", "One key idea is calibration. If the tool says ninety per cent, about ninety in a hundred such patients should really have the condition.", "Calibration is not accuracy. Accuracy is how often it is right. Calibration is whether its stated chances come true. A tool can have one without the other."]}, {"img": 12, "say": ["How do predictive tools fail? The key word is silent.", "They never crash or refuse. They answer every input. They look just as confident when wrong as when right. So a wrong label arrives with no flag.", "Two forces cause this. The world shifts: new patients, a new scanner, a new way of coding. Or the labels were skewed, as in the cost-based tool.", "The watching needed is specific. Not reading every output. Three habits instead. Test it on your own patients first. Check its numbers stay calibrated. Keep monitoring for drift.", "Done this way, this is the safest family of the three."]}], "keyPoint": "Predictive tools sort an input into a label or score and never create anything. They fail silently, so test locally, check calibration and keep monitoring.", "plain": ["Input goes in, a score or label comes out. It sorts; it never writes.", "Calibration: if it says ninety per cent, about ninety in a hundred should have the condition.", "The failure is silent: a wrong answer looks just as confident as a right one.", "Three habits: test locally, check calibration, monitor for drift."], "check": {"q": "A well-calibrated tool gives a group of patients a score of 0.9. What should you expect?", "o": ["About 90 in every 100 of them have the condition", "The tool is right 90 per cent of the time on all tasks", "90 per cent of the data was used"], "a": 0, "e": "Calibration means stated chances match what really happens. A score of 0.9 should come true about nine times in ten.", "retry": {"q": "What is the defining limit of a predictive tool?", "o": ["It cannot work with images", "It sorts what it is given but never creates new content", "It needs a human gate before every action"], "a": 1, "e": "A predictive tool draws a line between classes. It sorts, it does not write."}}, "scenario": {"title": "The early-warning tool", "setting": "A supplier's deterioration tool scored brilliantly in a published study at a large hospital abroad. Your district general hospital serves an older population and uses different monitors.", "steps": [{"prompt": "What is your main concern?", "choices": [{"t": "The tool will start writing false notes", "s": 0, "fb": "No. Predictive tools do not write anything."}, {"t": "The shift in patients and equipment could undo its published performance, silently", "s": 2, "fb": "Right. Different population, different monitors: the classic cause of silent failure."}, {"t": "The tool will refuse to give answers", "s": 0, "fb": "No. The danger is the opposite: it answers confidently even when it should not."}]}, {"prompt": "The supplier says it is '92 per cent accurate'. What do you ask?", "choices": [{"t": "Is it also calibrated? When it says 80 per cent, do about 80 in 100 deteriorate?", "s": 2, "fb": "Right. Accuracy and calibration are different, and a tool can have one without the other."}, {"t": "Can it run on tablets?", "s": 0, "fb": "Not the key question."}, {"t": "How many hospitals use it?", "s": 1, "fb": "Popularity is weak evidence. Ask about calibration on patients like yours."}]}, {"prompt": "Your IT lead suggests a nurse reads every score before it is shown. Is that the right oversight?", "choices": [{"t": "Yes, review everything", "s": 0, "fb": "No. That defeats the purpose of an alert. The habits are test, calibrate and monitor."}, {"t": "No. Test it on your own patients first, then check calibration and monitor for drift", "s": 2, "fb": "Right. Predictive tools need specific, ongoing checks, not a reader for every output."}, {"t": "Just switch it on and see", "s": 0, "fb": "Unsafe. Silent errors would go unnoticed."}]}]}}, {"title": "Generative: they write", "minutes": 2, "slides": [{"img": 13, "say": ["The second family does something the first cannot. It produces new material: text, a summary, an answer.", "Compare it with the eye tool. That one scored an image and wrote nothing. This one writes something that did not exist before. That is both its value and its danger.", "Follow the flow. A huge amount of text is used to train a foundation model. That is a big, general-purpose model that can later be adapted to many jobs.", "The engine inside is surprisingly simple. It predicts the next word. Then the next. Again and again.", "The foundation model is then adapted to a clinical purpose, either by extra training or by careful instructions.", "Now it can draft a note, summarise a record, or answer a question.", "Look at the amber gate. Every one of those outputs passes a human review before it reaches the record. The gate is drawn as part of the system, not as an extra.", "The red note names the hazard: hallucination. Ask the tool to summarise a clinic letter, and it may quietly invent a medicine the patient never took. Fluent, confident, and wrong."]}], "keyPoint": "A generative tool predicts the next word, over and over, to write new text. A human review gate is part of the system, not an optional extra.", "plain": ["It writes something new, unlike a predictive tool which only sorts.", "Underneath, it guesses the next word, again and again.", "Hallucination: a fluent, confident sentence that is false.", "Every output passes a human reader before it reaches the record."], "check": {"q": "In plain terms, how does a large language model produce text?", "o": ["It looks up answers in a medical database", "It copies paragraphs from the record", "It predicts the next word, again and again"], "a": 2, "e": "The engine is next-word prediction, repeated. Nothing in that checks whether the words are true.", "retry": {"q": "What is hallucination?", "o": ["A fluent, confident output that is false", "A tool refusing to answer", "A crash caused by too much data"], "a": 0, "e": "Hallucination is a believable but untrue output, stated as confidently as a true one."}}, "scenario": {"title": "The invented medicine", "setting": "A language model summarises a long clinic letter for the ward. The summary lists a blood thinner that the patient has never taken.", "steps": [{"prompt": "What happened?", "choices": [{"t": "The patient forgot to mention stopping it", "s": 0, "fb": "Unlikely. The medicine appears nowhere in the source letter."}, {"t": "The tool hallucinated a plausible medicine", "s": 2, "fb": "Right. It predicted likely words, and a blood thinner often appears in such letters."}, {"t": "A typing error", "s": 0, "fb": "No. A whole invented medicine is not a typo."}]}, {"prompt": "Which safeguard would have caught this?", "choices": [{"t": "Trusting the summary because it reads well", "s": 0, "fb": "No. Reading well is exactly what makes hallucination dangerous."}, {"t": "A clinician checking the summary against the source letter before it enters the record", "s": 2, "fb": "Right. The human review gate is part of the system for this reason."}, {"t": "Asking a second language model to check it", "s": 1, "fb": "It may help, but a second writer is not a reader. A person must check against the source."}]}]}}, {"title": "Plausible is not true", "minutes": 2, "slides": [{"img": 15, "say": ["Let's look harder at the risk. The headline is: plausibility is not truth.", "The tool's strength and its danger are the same thing. It is built to produce language that sounds right. When it has no good answer, it does not fall silent. It produces a confident one anyway.", "There is a human half to this risk too. We call it automation bias. It is our habit of waving through a smooth, confident answer without checking. It gets worse under time pressure on a busy ward.", "So the risk is part machine, part human. And because it is built into how these tools work, not an occasional glitch, several authors argue they need their own stricter rules.", "The safeguard is simple to say. Every clinically important output is read by a competent person, ideally against the source, before it counts.", "And design the workflow so that review is easy. A rushed review becomes a rubber stamp.", "Try this in your head. A fluent discharge summary with one invented medicine. Skimming it at the end of a long shift, would you spot it?", "Here is the rule. A system that writes must be checked by a reader, every time."]}], "keyPoint": "Generative tools are built to sound right, and busy people tend to wave through confident text. So a system that writes must be checked by a reader, every time.", "plain": ["Sounding right and being right are different things.", "Automation bias: we accept smooth, confident text without checking, especially when busy.", "The risk is built in, so review is built in too.", "Make review easy, or it becomes a rubber stamp."], "check": {"q": "What is automation bias?", "o": ["A tool favouring certain patients", "Our tendency to accept smooth, confident output without checking", "Bias caused by automated data entry"], "a": 1, "e": "Automation bias is the human half of the risk. It gets worse under time pressure.", "retry": {"q": "A generative tool has no good answer to your question. What does it usually do?", "o": ["Says it does not know", "Crashes", "Produces a confident answer anyway"], "a": 2, "e": "It is built to sound plausible, so it fills the gap with confident text rather than staying silent."}}, "scenario": {"title": "The end-of-shift letters", "setting": "Your clinic has introduced an AI letter drafter. Doctors are asked to approve twenty drafts in the last ten minutes of the day.", "steps": [{"prompt": "What is the problem with this arrangement?", "choices": [{"t": "Twenty letters is too few to be worth it", "s": 0, "fb": "No. The problem is the review, not the number."}, {"t": "Rushed review becomes a rubber stamp, so invented details will slip through", "s": 2, "fb": "Right. Automation bias is worst under time pressure. Review must be real."}, {"t": "The tool should write fewer letters", "s": 0, "fb": "No. The fix is in how review is done."}]}, {"prompt": "A consultant says the drafts 'always read perfectly' so a quick skim is enough. What do you say?", "choices": [{"t": "Agree, good writing means good content", "s": 0, "fb": "No. Plausible is not true. Smooth text is exactly what hides a hallucination."}, {"t": "Reading well is not the same as being right. Each letter should be checked against the notes", "s": 2, "fb": "Right. A system that writes must be checked by a reader, every time."}, {"t": "Suggest checking one letter in five", "s": 1, "fb": "Better than nothing, but four in five would reach patients unchecked."}]}]}}, {"title": "Agentic: they act", "minutes": 3, "slides": [{"img": 16, "say": ["The third family is the newest and least settled. If a predictive tool judges and a generative tool writes, an agent acts.", "An agent does not stop at an answer. It works towards a goal across several steps.", "Three ingredients make it agentic. A goal, not just a question. Tools, such as searching a guideline or querying the record. And memory, so it can plan ahead.", "Follow the loop. The agent looks at the chart. It plans. It acts, using a tool. It checks the result and remembers it. And round again.", "Now the amber gate at the bottom. A triage assistant spots a rising early-warning score. It plans an escalation and drafts the orders. Then it stops and waits for a clinician to approve."]}, {"img": 18, "say": ["The signature danger here is the snowball. The agent misreads one result. It plans on that mistake. It orders on that mistake. Then it acts on it, several times over.", "A single score or draft contains its own mistake. A chain of actions does not. The error feeds the next step and grows as it travels.", "So the rule is firm. Any step that touches a patient passes a human gate first. That gate is a hard boundary, not a suggestion.", "Agentic systems are still immature. Almost all real deployments keep a person firmly in the loop."]}], "keyPoint": "An agent pursues a goal across steps using tools and memory. One early error can snowball, so any step that touches a patient passes a human gate first.", "plain": ["Three ingredients: a goal, tools, and memory.", "The loop: look, plan, act, check, and round again.", "An early mistake feeds every later step and grows.", "Gate every action that touches a patient. Agents are still immature."], "check": {"q": "Which three ingredients make a system agentic?", "o": ["A goal, tools and memory", "Labels, features and a classifier", "A text corpus and careful instructions"], "a": 0, "e": "An agent pursues a goal, uses tools such as record queries, and keeps a memory so it can plan over several steps.", "retry": {"q": "Why are mistakes by agentic systems especially dangerous?", "o": ["They are always large and dramatic", "One early mistake feeds the next step and grows", "They only happen during training"], "a": 1, "e": "A chain of actions lets an early error travel and snowball before anyone notices."}}, "scenario": {"title": "Where to put the gate", "setting": "Your trust is piloting a triage assistant. It reads vital signs, plans an escalation, drafts orders, and can send them to pharmacy. The project lead wants it fully automatic to save time.", "steps": [{"prompt": "Where must a human gate sit?", "choices": [{"t": "Before any step that acts on the patient, such as sending orders", "s": 2, "fb": "Right. The gate stops an early misreading from travelling into orders and treatment."}, {"t": "Only at the end of the week, in an audit", "s": 0, "fb": "Too late. By then an error has acted on the patient many times."}, {"t": "Before it reads the vital signs", "s": 0, "fb": "Reading data is harmless. The gate belongs before actions."}]}, {"prompt": "The lead says the assistant 'is autonomous, so it replaces the clinician'. What is the right correction?", "choices": [{"t": "Agreed, that is what agentic means", "s": 0, "fb": "No. Agentic does not mean unsupervised."}, {"t": "Responsible deployments keep a person firmly in the loop; the technology is still immature", "s": 2, "fb": "Right. More autonomy demands tighter oversight, not less."}, {"t": "It can replace junior staff but not consultants", "s": 1, "fb": "No. The gate is about patient safety, not seniority."}]}]}}, {"title": "Match the tool to the task", "minutes": 3, "slides": [{"img": 19, "say": ["Now a method you can use on any proposed tool. Ask three questions, in order.", "First, what output does the task need? A score points to predictive. New text points to generative. A chain of actions points to agentic.", "Second, how does that kind of tool fail? A quiet wrong number, a confident wrong sentence, or a snowballing mistake.", "Third, how much watching does that demand? Decide before go-live.", "The table shows it in action. Flagging deterioration from vital signs: predictive, so monitor its numbers. Drafting a discharge summary: generative, so a clinician reads every draft.", "Answering a patient's medicine question: generative, so human review, and the answer should show its sources. Organising a multi-step work-up: agentic, so gate every action.", "The rule at the bottom is one of modesty. Choose the least autonomous tool that does the job."]}, {"img": 20, "say": ["If you remember one sentence from this chapter, make it this. More autonomy demands tighter oversight. That is not negotiable.", "A tool that predicts can fail silently, so monitor. A tool that writes can fail fluently, so review. A tool that acts can fail repeatedly, so gate."]}, {"img": 21, "say": ["So here is the skill to keep. Name the system. Work out from its family how it will fail. Demand the watching its autonomy deserves.", "Well done. Now try the final case test."]}], "keyPoint": "Ask: what output, how does it fail, how much watching? Then choose the least autonomous tool that does the job, with the oversight built in before go-live.", "plain": ["Question one: what output does the task need?", "Question two: how does that kind of tool fail?", "Question three: how much watching does that demand?", "Pick the least autonomous tool that does the job, and build the oversight before go-live."], "check": {"q": "What is the first of the three questions for matching a tool to a task?", "o": ["Which company made it?", "What output does the task need?", "How much does it cost?"], "a": 1, "e": "Start with the output: a score, new text, or a chain of actions. That points to the family, and the family tells you the risk.", "retry": {"q": "Which principle ties the chapter together?", "o": ["More autonomy demands tighter oversight", "More data always makes AI safer", "Generative tools need less watching than predictive ones"], "a": 0, "e": "The more freely a system may act, the more tightly it must be checked. That is not negotiable."}}, "scenario": {"title": "Choosing for the admissions unit", "setting": "Your admissions unit wants help estimating each patient's likely length of stay. A supplier offers an agentic assistant that estimates the stay, books the discharge transport and messages the family.", "steps": [{"prompt": "What output does the task actually need?", "choices": [{"t": "A number: a predictive task", "s": 2, "fb": "Right. An estimate of days is a score, so predictive fits."}, {"t": "A letter: a generative task", "s": 0, "fb": "No. Nobody asked for new text."}, {"t": "A chain of bookings: an agentic task", "s": 0, "fb": "No. The unit asked for an estimate, not for actions."}]}, {"prompt": "The supplier says the agentic version is 'more capable'. What do you say?", "choices": [{"t": "Choose the least autonomous tool that does the job, so the predictive one", "s": 2, "fb": "Right. Extra autonomy brings extra risk you do not need for this task."}, {"t": "Take the most capable option", "s": 0, "fb": "No. Capability and risk rise together. Match the tool to the need."}, {"t": "Take the agentic one but switch off the messaging", "s": 1, "fb": "Closer, but you are still buying autonomy and oversight burden you do not need."}]}, {"prompt": "What oversight do you build before go-live for the predictive tool?", "choices": [{"t": "A clinician reads every estimate", "s": 0, "fb": "That is the oversight for a writer, not a sorter, and it defeats the purpose."}, {"t": "Test it on your own patients, check calibration, monitor for drift", "s": 2, "fb": "Right. Those are the three habits for predictive tools."}, {"t": "None, it only gives a number", "s": 0, "fb": "Unsafe. Predictive tools fail silently."}]}]}}], "test": [{"q": "A tool books tests, chases results and prepares a referral, working through several steps on its own. Which family is it?", "o": ["Predictive", "Generative", "Agentic"], "a": 2, "e": "Planning and acting across steps towards a goal is the mark of an agentic system.", "lesson": 0}, {"q": "A colleague says 'it's all just AI, the distinctions are academic'. The best reply is…", "o": ["The families fail differently, so they need different safeguards", "The distinctions only matter to engineers", "All AI tools need the same oversight"], "a": 0, "e": "Naming the family tells you how a tool fails and which safeguard it needs.", "lesson": 0}, {"q": "A manager proposes reading every output of a sepsis alert, a letter drafter and a work-up assistant. Which of the three does this oversight actually suit?", "o": ["The sepsis alert", "The letter drafter", "The work-up assistant"], "a": 1, "e": "Reading every output is the habit for a writer. Sorters need monitoring and agents need gates.", "lesson": 1}, {"q": "A brochure says a tool uses 'deep learning rather than machine learning'. What is wrong?", "o": ["Deep learning is older than machine learning", "Deep learning is one kind of machine learning, so the claim makes no sense", "Nothing"], "a": 1, "e": "Deep learning sits inside machine learning as its most powerful kind.", "lesson": 2}, {"q": "A team wants to tune a treatment plan by trial and feedback on patients. The chapter's concern is…", "o": ["It cannot learn from feedback", "It needs millions of labelled scans", "It is hard to test safely on real patients"], "a": 2, "e": "Reinforcement learning suits decisions in sequence but is hard to test safely on patients.", "lesson": 3}, {"q": "A supervised tool learned from past records where one group of patients was under-recorded as ill. What will it do?", "o": ["Correct the record", "Learn the skew and under-score that group", "Refuse to work"], "a": 1, "e": "A supervised tool is only as good as its labels. Skewed labels teach a skewed tool.", "lesson": 3}, {"q": "An AI tool looks at a chest X-ray and returns the chance that pneumonia is present. Which family is it?", "o": ["Generative", "Agentic", "Predictive"], "a": 2, "e": "Returning a probability for a set question is sorting. It creates no new content.", "lesson": 4}, {"q": "A predictive tool is 90 per cent accurate but when it says '80 per cent risk' only 40 in 100 deteriorate. What is wrong?", "o": ["It is poorly calibrated", "It is hallucinating", "Its errors are compounding"], "a": 0, "e": "Accuracy and calibration differ. Stated chances that do not come true mean poor calibration, which quietly misleads.", "lesson": 4}, {"q": "A language model summarises a letter and adds a medicine the patient never took. Which safeguard would best have caught this?", "o": ["Trusting the confident wording", "A clinician checking against the source before it reaches the record", "Asking another language model"], "a": 1, "e": "Hallucinations look plausible, so a human reader checking against the source is the key safeguard.", "lesson": 5}, {"q": "Doctors approve AI-drafted letters in a two-minute rush at the end of clinic. Which risk does this worsen?", "o": ["Dataset shift", "Automation bias", "Compounding error"], "a": 1, "e": "Under time pressure people wave through smooth text. Review must be real, not a rubber stamp.", "lesson": 6}, {"q": "An agentic assistant has planned an escalation and drafted orders. Why should it pause for a clinician before placing them?", "o": ["It needs time to retrain", "A human gate stops an early error reaching the patient", "Pausing saves computing power"], "a": 1, "e": "In a chain of actions errors snowball, so a gate before any patient-facing step contains them.", "lesson": 7}, {"q": "A service wants AI to estimate each patient's length of stay at admission. Which family and oversight fit?", "o": ["Predictive, with local testing and calibration checks", "Generative, with every draft reviewed", "Agentic, with every action gated"], "a": 0, "e": "A number is a predictive output. Its risks are miscalibration and drift, so test locally and monitor.", "lesson": 8}, {"q": "Two tools do the same job equally well. One acts on its own across steps; the other just gives a score. Which should you choose?", "o": ["The one that acts, it is more capable", "The one that gives a score, it is less autonomous", "Either, it makes no difference"], "a": 1, "e": "Choose the least autonomous tool that does the job. Extra autonomy is extra risk you do not need.", "lesson": 8}]};
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids){ const e=document.createElement(tag); if(attrs) for(const [k,v] of Object.entries(attrs)){ if(k==='class') e.className=v; else if(k==='html') e.innerHTML=v; else if(k.startsWith('on')) e.addEventListener(k.slice(2),v); else if(v!==false&&v!=null) e.setAttribute(k,v===true?'':v);} for(const k of kids.flat()) if(k!=null&&k!==false) e.append(k.nodeType?k:document.createTextNode(k)); return e; }
+const pad = n => String(n).padStart(2,'0');
+const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+const pct = x => Math.round(100*x);
+function seg(options, value, onChange, label){ const w = h('div',{class:'seg',role:'group','aria-label':label||''}); const bs = options.map(([v,t]) => { const b = h('button',{type:'button','aria-pressed':String(v===value)}, t); b.onclick = () => { bs.forEach(x=>x.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); onChange(v); }; return b; }); w.append(...bs); return w; }
+
+/* ---------------- learner state ---------------- */
+const KEY = 'cg:' + CH.id;
+const blank = () => ({ v:2, starter:null, plan:null, lessons:{}, test:null, secs:0, updated:0, name:'' });
+let S;
+try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY) || 'null') || {}); } catch(e){ S = blank(); }
+function save(){ S.updated = Date.now(); S.meta = {title:CH.title, num:CH.num, index:metrics().index, level:metrics().level, lessons:CH.lessons.length, done:Object.values(S.lessons).filter(l=>l.done).length, test:!!S.test};
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} renderChip(); renderMenu(); }
+function L(i){ return S.lessons[i] || (S.lessons[i] = {watched:false, check:null, retry:null, caseScore:0, caseMax:0, caseDone:false, done:false, secs:0}); }
+
+/* ---------------- metrics (Learning Index) ----------------
+   Knowledge 35%: first-attempt quick checks + latest final-test answers correct
+   Application 35%: points earned in case simulations (each choice 0–2)
+   Self-awareness 15%: how often your confidence matched your answer (sure & right, or unsure & wrong)
+   Completion 15%: lessons completed + final test taken
+   Levels follow Benner's novice-to-expert stages (shortened for a short course). */
+const LEVELS = [[0,'Novice','Starting out: knows the words, needs support to apply them'],[40,'Advanced beginner','Recognises the main ideas in familiar cases'],[60,'Competent','Applies the ideas to new cases and asks the right questions'],[80,'Proficient','Judges tools confidently and explains why to colleagues']];
+function metrics(){
+  const n = CH.lessons.length; let kOk=0,kN=0,aPts=0,aMax=0,cal=0,calN=0,done=0;
+  for (let i=0;i<n;i++){ const l = S.lessons[i]; if (!l) continue;
+    if (l.check){ kN++; if (l.check.ok) kOk++; if (l.check.conf){ calN++; if ((l.check.conf==='sure')===l.check.ok) cal++; } }
+    aPts += l.caseScore||0; aMax += l.caseDone ? (l.caseMax||0) : 0; if (l.done) done++; }
+  if (S.test){ S.test.answers.forEach(a=>{ kN++; if (a.ok) kOk++; if (a.conf){ calN++; if ((a.conf==='sure')===a.ok) cal++; } }); }
+  const K = kN? kOk/kN : 0, A = aMax? aPts/aMax : 0, C = calN? cal/calN : null, P = (done + (S.test?1:0))/(n+1);
+  const parts = [[K,.35],[A,.35],[P,.15]]; if (C!=null) parts.push([C,.15]);
+  const wsum = parts.reduce((x,p)=>x+p[1],0); const idx = Math.round(100*parts.reduce((x,p)=>x+p[0]*p[1],0)/wsum);
+  const lv = LEVELS.filter(l=>idx>=l[0]).pop();
+  return {K,A,C,P,index:idx,level:lv[1],levelText:lv[2],kN,aMax,calN,done,n};
+}
+
+/* ---------------- tutor + voice ---------------- */
+const TUTOR_SVG = `<svg viewBox="0 0 200 200"><defs><clipPath id="cc"><circle cx="100" cy="100" r="100"/></clipPath></defs><g clip-path="url(#cc)"><rect width="200" height="200" fill="var(--accent-soft)"/><path d="M14 205 C22 154 58 138 100 136 C142 138 178 154 186 205 Z" fill="#24364A"/><path d="M84 137 L100 168 L116 137 Z" fill="#EEF4F4"/><path d="M80 140 C70 166 80 182 94 184" fill="none" stroke="#9AA9AF" stroke-width="3.2" stroke-linecap="round"/><path d="M120 140 C130 166 120 182 106 184" fill="none" stroke="#9AA9AF" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="188" r="6" fill="#B8C4C8" stroke="#7F8E94" stroke-width="1.5"/><rect x="88" y="110" width="24" height="32" rx="9" fill="#A9714E"/><g class="tHead"><ellipse cx="70" cy="92" rx="5" ry="8" fill="#B87C58"/><ellipse cx="130" cy="92" rx="5" ry="8" fill="#B87C58"/><ellipse cx="100" cy="88" rx="30" ry="36" fill="#C48A63"/><path d="M66 92 C60 52 84 38 104 40 C128 40 142 58 134 94 C130 76 122 64 102 63 C84 63 72 72 66 92 Z" fill="#2B211C"/><path d="M67 88 C62 108 68 124 76 128 L76 96 Z" fill="#2B211C"/><path d="M133 88 C138 108 132 124 124 128 L124 96 Z" fill="#2B211C"/><path d="M81 76 Q89 72 96 76" fill="none" stroke="#2B211C" stroke-width="2.4" stroke-linecap="round"/><path d="M104 76 Q111 72 119 76" fill="none" stroke="#2B211C" stroke-width="2.4" stroke-linecap="round"/><g class="eyes"><ellipse cx="89" cy="86" rx="3.2" ry="3.6" fill="#1D1714"/><ellipse cx="111" cy="86" rx="3.2" ry="3.6" fill="#1D1714"/></g><circle cx="89" cy="86" r="9" fill="none" stroke="#3B3532" stroke-width="1.5"/><circle cx="111" cy="86" r="9" fill="none" stroke="#3B3532" stroke-width="1.5"/><path d="M98 86 L102 86" stroke="#3B3532" stroke-width="1.5"/><path d="M100 90 Q96 100 101 102" fill="none" stroke="#9C6646" stroke-width="1.8" stroke-linecap="round"/><ellipse class="mouth" cx="100" cy="112" rx="8" ry="1.4" fill="#6E3029"/><path class="smile" d="M92 111 Q100 115 108 111" fill="none" stroke="#6E3029" stroke-width="1.8" stroke-linecap="round"/></g></g></svg>`;
+const T = { el:null, open:0, target:0, speaking:false, hasBoundary:false, nextBlink:performance.now()+2500, blinkT:0 };
+function tick(now){
+  if (T.el && T.el.isConnected){
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (T.speaking && !T.hasBoundary && !reduce) T.target = 0.35 + 0.55*Math.abs(Math.sin(now/95))*(0.6+0.4*Math.sin(now/410));
+    if (!T.speaking) T.target = 0;
+    T.open += (T.target-T.open)*0.35; if (T.hasBoundary) T.target *= 0.86;
+    const o = reduce ? (T.speaking?0.3:0) : T.open;
+    const m = T.el.querySelector('.mouth'), sm = T.el.querySelector('.smile'), ey = T.el.querySelector('.eyes'), hd = T.el.querySelector('.tHead');
+    m.setAttribute('ry',(1.4+o*5.2).toFixed(2)); m.setAttribute('rx',(8-o*1.5).toFixed(2)); sm.style.opacity = o>0.15?0:1;
+    if (now > T.nextBlink){ T.blinkT = now; T.nextBlink = now + 2600 + Math.random()*3200; }
+    const b = now - T.blinkT, sy = b<140 ? Math.abs(1-2*b/140) : 1;
+    ey.setAttribute('transform',`translate(0 ${86*(1-sy)}) scale(1 ${Math.max(0.1,sy)})`);
+    const bob = T.speaking&&!reduce ? Math.sin(now/600)*1.2 : 0, tilt = T.speaking&&!reduce ? Math.sin(now/1300)*1.6 : 0;
+    hd.setAttribute('transform',`translate(0 ${bob.toFixed(2)}) rotate(${tilt.toFixed(2)} 100 120)`);
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+function setSpeaking(v){ T.speaking = v; if (T.el) T.el.classList.toggle('speaking', v); }
+const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+let voices = [], voice = null;
+function pickVoice(){
+  if (!synth) return; voices = synth.getVoices().filter(v=>/^en/i.test(v.lang));
+  const pref = S.plan && S.plan.voice; const sorted = voices.slice().sort((a,b)=>(b.lang==='en-GB')-(a.lang==='en-GB'));
+  voice = pref==='__none' ? null : (sorted.find(v=>v.name===pref) || sorted.find(v=>v.lang==='en-GB') || sorted[0] || null);
+}
+if (synth){ pickVoice(); synth.addEventListener ? synth.addEventListener('voiceschanged', ()=>{ pickVoice(); if (curView && curView.startsWith('l')) refreshVoiceSel && refreshVoiceSel(); }) : (synth.onvoiceschanged = pickVoice); }
+const WPS = 2.55;
+const words = t => t.split(/\s+/).filter(Boolean).length;
+const rate = () => (S.plan && S.plan.rate) || 0.95;
+function sentences(arr){ return arr.flatMap(p => (p.match(/[^.!?]+[.!?]+["'”’]?\s*|[^.!?]+$/g) || [p]).map(x=>x.trim()).filter(Boolean)); }
+
+/* ---------------- navigation ---------------- */
+let curView = 'start';
+function views(){ return ['start', ...CH.lessons.map((_,i)=>'l'+i), 'final', 'progress']; }
+function renderMenu(){
+  const m = $('#menu'); m.innerHTML = '';
+  const add = (v, label, state) => { const b = h('button',{type:'button','aria-current':String(curView===v),onclick:()=>go(v)}, state!==undefined ? h('span',{class:'dot'+(state==='done'?' done':state==='part'?' part':'')}) : null, label); m.append(b); };
+  add('start','Start', S.plan ? 'done' : '');
+  CH.lessons.forEach((l,i)=>{ const st = S.lessons[i]; add('l'+i, `${i+1}. ${l.title}`, st ? (st.done?'done':(st.watched||st.check)?'part':'') : ''); });
+  add('final','Final case test', S.test ? 'done' : '');
+  add('progress','My progress');
+  const cur = m.querySelector('[aria-current="true"]'); if (cur) cur.scrollIntoView({block:'nearest',inline:'center'});
+}
+function renderChip(){ const M = metrics(); $('#idxVal').textContent = M.index; $('#idxLvl').textContent = M.level; }
+$('#idxChip').onclick = () => go('progress');
+let lessonTimer = null, lessonStart = 0;
+function go(v){
+  stopSpeech(); flushTime(); curView = v; const main = $('#main'); main.innerHTML = '';
+  if (v==='start') renderStart(main); else if (v==='final') renderFinal(main); else if (v==='progress') renderProgress(main); else renderLesson(main, +v.slice(1));
+  renderMenu(); renderChip(); window.scrollTo({top:0, behavior:'instant'});
+  try { history.replaceState(null,'','#'+v); } catch(e){}
+  if (v.startsWith('l')) lessonStart = Date.now();
+}
+function flushTime(){ if (curView && curView.startsWith('l') && lessonStart){ const s = Math.round((Date.now()-lessonStart)/1000); if (s>0 && s<3600){ L(+curView.slice(1)).secs += s; S.secs += s; save(); } lessonStart = 0; } }
+addEventListener('visibilitychange', ()=>{ if (document.hidden) flushTime(); else if (curView.startsWith('l')) lessonStart = Date.now(); });
+
+/* ---------------- START: personal plan ---------------- */
+function renderStart(main){
+  const plan = S.plan || {time:10, style:'listen', rate:0.95, voice:null};
+  main.append(h('div',null, h('div',{class:'eyebrow'}, CH.num==='A' ? 'Appendix A' : 'Chapter '+CH.num), h('h2',{style:'font-size:2rem;margin-top:4px'}, CH.title), h('p',{class:'lede',style:'margin-top:8px'}, CH.summary)));
+  main.append(h('div',{class:'card'}, h('h3',null,'What you will be able to do'), h('ul',{style:'margin:0;padding-left:20px'}, CH.outcomes.map(o=>h('li',null,o)))));
+  const ans = (S.starter && S.starter.answers) ? S.starter.answers.slice() : CH.starter.map(()=>null);
+  const sq = h('div',{style:'display:flex;flex-direction:column;gap:14px'});
+  CH.starter.forEach((q,i)=>{ const box = h('div',null, h('p',{class:'q'}, `${i+1}. ${q.q}`)); const opts = h('div',{class:'opts'});
+    q.o.forEach((o,j)=>{ const b = h('button',{class:'opt',type:'button','aria-pressed':String(ans[i]===j)}, o); if (ans[i]===j) b.style.borderColor='var(--accent)';
+      b.onclick = () => { ans[i]=j; opts.querySelectorAll('.opt').forEach(x=>{x.style.borderColor='';}); b.style.borderColor='var(--accent)'; }; opts.append(b); });
+    box.append(opts); sq.append(box); });
+  main.append(h('div',{class:'card'}, h('h3',null,'1. Where are you starting from?'), h('p',{class:'lede',style:'margin-bottom:12px'},'Three quick questions. There is no pass mark: your answers just set the right pace for you.'), sq));
+  const tSel = seg([[5,'5 minutes'],[10,'10 minutes'],[20,'20 minutes or more']], plan.time, v=>plan.time=v, 'Time per session');
+  const stSel = seg([['listen','Listen and watch'],['read','Read at my own pace']], plan.style, v=>plan.style=v, 'Learning style');
+  const rSel = seg([[0.8,'Slower'],[0.95,'Normal'],[1.15,'Faster']], plan.rate, v=>plan.rate=v, 'Speaking speed');
+  main.append(h('div',{class:'card'}, h('h3',null,'2. How do you like to learn?'),
+    h('div',{class:'plan',style:'gap:12px'}, h('div',null,h('b',null,'Time per sitting'),tSel), h('div',null,h('b',null,'Style'),stSel), h('div',null,h('b',null,'Speaking speed'),rSel))));
+  const out = h('div');
+  const btn = h('button',{class:'btn primary',type:'button'},'Make my plan');
+  btn.onclick = () => {
+    const score = CH.starter.reduce((a,q,i)=>a+(ans[i]===q.a?1:0),0);
+    S.starter = {answers:ans, score}; S.plan = Object.assign(plan, {path: score>=2 ? 'fast' : 'steady'}); save(); showPlan(out);
+  };
+  main.append(h('div',{class:'card'}, h('h3',null,'3. Your plan'), h('div',{class:'row',style:'margin-bottom:10px'}, btn), out));
+  if (S.plan) showPlan(out);
+}
+function showPlan(out){
+  const p = S.plan, n = CH.lessons.length; out.innerHTML = '';
+  const per = Math.max(1, Math.floor(p.time / ((p.style==='read'?1.5:2.2) + 2)));
+  const sessions = []; for (let i=0;i<n;i+=per) sessions.push([i, Math.min(n,i+per)-1]);
+  const pathTxt = p.path==='fast' ? 'Fast track. You already know some of this, so each lesson lets you skip straight to the check and case. The plain-words summaries stay folded unless you need them.' : 'Step by step. Each lesson shows a plain-words summary after Sam explains it, and gives you a second try if a question trips you up.';
+  out.append(h('div',{class:'plan'},
+    h('div',null,h('b',null,'Your path'), h('span',null, h('span',{class:'pill acc'}, p.path==='fast'?'Fast track':'Step by step'),' ', pathTxt)),
+    h('div',null,h('b',null,'Starter score'), h('span',null, `${S.starter.score} of ${CH.starter.length}`)),
+    h('div',null,h('b',null,'Sessions'), h('span',null, `${sessions.length} sittings of about ${p.time} minutes, then the final case test.`))),
+    h('div',{class:'advice',style:'margin-top:10px'}, sessions.map((s,k)=>h('div',null, h('b',{style:'min-width:80px'},'Sitting '+(k+1)), h('span',null, s[0]===s[1] ? `Lesson ${s[0]+1}: ${CH.lessons[s[0]].title}` : `Lessons ${s[0]+1}–${s[1]+1}: ${CH.lessons[s[0]].title} to ${CH.lessons[s[1]].title}`)))),
+    h('div',{class:'row',style:'margin-top:12px'}, h('button',{class:'btn primary',type:'button',onclick:()=>go('l'+firstUnfinished())}, firstUnfinished()===0 && !S.lessons[0] ? 'Start lesson 1' : 'Continue: lesson '+(firstUnfinished()+1)), h('span',{class:'lede',style:'font-size:.88rem'},'You can change any of this later. Your progress is saved in this browser only.')));
+}
+function firstUnfinished(){ for (let i=0;i<CH.lessons.length;i++) if (!(S.lessons[i]&&S.lessons[i].done)) return i; return CH.lessons.length-1; }
+
+/* ---------------- LESSON ---------------- */
+let player = null, refreshVoiceSel = null;
+function stopSpeech(){ if (player){ player.stop(); } }
+function renderLesson(main, i){
+  const les = CH.lessons[i], st = L(i), plan = S.plan || {path:'steady', style:'listen'};
+  if (!S.plan) main.append(h('div',{class:'card',style:'background:var(--info-soft)'}, h('p',null,'Tip: set your pace and style on the ', h('a',{href:'#start',onclick:e=>{e.preventDefault();go('start');}},'Start'),' page first. It takes a minute.')));
+  const stepsEl = h('div',{class:'steps'});
+  function renderSteps(){ stepsEl.innerHTML=''; [['Watch',st.watched],['Check',!!st.check],['Case',st.caseDone]].forEach(([t,ok],k)=>stepsEl.append(h('span',{class: ok?'ok':''}, (ok?'✓ ':(k+1)+'. ')+t))); }
+  renderSteps();
+  main.append(h('div',null, h('div',{class:'eyebrow'}, `Lesson ${i+1} of ${CH.lessons.length} · about ${les.minutes||2} minutes`), h('h2',{style:'font-size:1.8rem;margin:4px 0 8px'}, les.title), stepsEl));
+
+  // --- WATCH
+  const slides = les.slides; const sents = slides.map(s=>sentences(s.say));
+  let si = 0, ui = 0, playing = false, token = 0, timers = [], mode = plan.style === 'read' ? 'read' : 'listen';
+  const img = h('img',{alt:''}); const tag = h('span',{class:'slidetag'}); const big = h('button',{class:'bigplay',type:'button'}, h('span',{class:'c'}, h('span',{html:'<svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="#fff"/></svg>'})), h('span',null,'Play lesson'));
+  const stage = h('div',{class:'stage'}, img, tag, big);
+  const tutorEl = h('div',{class:'tutor','aria-hidden':'true',html:TUTOR_SVG}); T.el = tutorEl;
+  const cap = h('div',{class:'cap','aria-live':'polite'});
+  const readBox = h('div',{class:'read'});
+  const speakRow = h('div',{class:'speaker'}, h('div',{class:'tutor-wrap'}, tutorEl, h('span',null,'Sam, your tutor')), cap);
+  const playBtn = h('button',{class:'btn primary',type:'button'},'Play');
+  const prevBtn = h('button',{class:'btn',type:'button'},'◀ Back'), nextBtn = h('button',{class:'btn',type:'button'},'Next ▶');
+  const voiceSel = h('select',{id:'voiceSel','aria-label':'Voice'});
+  refreshVoiceSel = () => { voiceSel.innerHTML=''; voiceSel.append(h('option',{value:'__none'},'No voice: captions only')); voices.slice().sort((a,b)=>(b.lang==='en-GB')-(a.lang==='en-GB')).forEach(v=>voiceSel.append(h('option',{value:v.name},`${v.name} (${v.lang})`))); voiceSel.value = voice ? voice.name : '__none'; };
+  refreshVoiceSel();
+  voiceSel.onchange = () => { S.plan = S.plan || {path:'steady',style:'listen',time:10,rate:0.95}; S.plan.voice = voiceSel.value; save(); pickVoice(); if (playing){ stop(); play(); } };
+  const rateSel = seg([[0.8,'Slower'],[0.95,'Normal'],[1.15,'Faster']], rate(), v=>{ S.plan = S.plan || {path:'steady',style:'listen',time:10}; S.plan.rate = v; save(); if (playing){ stop(); play(); } }, 'Speed');
+  const modeSel = seg([['listen','Listen'],['read','Read']], mode, v=>{ stop(); mode = v; layout(); }, 'Mode');
+  const plainBtn = h('button',{class:'btn small',type:'button'},'Explain more simply');
+  const ctrls = h('div',{class:'ctrls'}, prevBtn, playBtn, nextBtn, h('span',{class:'grow'}), modeSel, rateSel, h('label',null,'Voice', voiceSel));
+  const plainCard = h('div',{class:'plain',hidden:true}, h('b',null,'In plain words'), h('ul',null, les.plain.map(p=>h('li',null,p))));
+  const keyCard = h('div',{class:'key',hidden:!st.watched}, h('b',{class:'k'},'Key point'), h('p',null, les.keyPoint));
+  const skipBtn = h('button',{class:'btn small',type:'button',onclick:()=>{ stop(); markWatched(); checkCard.scrollIntoView({behavior:'smooth'}); }}, 'I know this: skip to the check');
+  plainBtn.onclick = () => { plainCard.hidden = !plainCard.hidden; plainBtn.textContent = plainCard.hidden ? 'Explain more simply' : 'Hide plain words'; };
+  const watchCard = h('div',{class:'card'}, stage, speakRow, readBox, ctrls, h('div',{class:'row',style:'margin-top:10px'}, plainBtn, plan.path==='fast' ? skipBtn : null), h('div',{style:'margin-top:10px'}, plainCard));
+  main.append(watchCard, keyCard);
+  function layout(){ speakRow.hidden = mode!=='listen'; readBox.hidden = mode!=='read'; playBtn.hidden = mode!=='listen'; big.hidden = mode!=='listen' || playing; rateSel.hidden = mode!=='listen'; voiceSel.parentNode.hidden = mode!=='listen'; showSlide(); }
+  function showSlide(){
+    img.src = `slides/s-${pad(slides[si].img)}.jpg`; img.alt = `Slide for ${les.title}`; tag.textContent = `${si+1} / ${slides.length}`;
+    prevBtn.disabled = si===0; nextBtn.textContent = si===slides.length-1 ? (mode==='read' ? 'Finish reading ✓' : 'Next ▶') : 'Next ▶';
+    nextBtn.disabled = mode==='listen' && si===slides.length-1;
+    if (mode==='read'){ readBox.innerHTML=''; slides[si].say.forEach(p=>readBox.append(h('p',null,p))); }
+    else caption(-1);
+  }
+  function caption(ci){ cap.innerHTML=''; const t = sents[si][ui]||''; let pos=0; t.split(/(\s+)/).forEach(part=>{ if(!part.trim()){cap.append(part);pos+=part.length;return;} const s0=pos,e0=pos+part.length; pos=e0; cap.append(h('span',{class: ci<0?'w':(ci>=e0?'w past':ci>=s0?'w now':'w')},part)); }); }
+  function clear(){ timers.forEach(clearTimeout); timers=[]; }
+  function stop(){ playing=false; token++; clear(); if (synth) synth.cancel(); setSpeaking(false); playBtn.textContent='Play'; }
+  function play(){ if (playing) return; playing = true; big.hidden = true; playBtn.textContent='Pause'; speak(); }
+  function speak(){
+    const tok = ++token; clear(); const text = sents[si][ui]; caption(-1);
+    const est = words(text)/(WPS*rate())*1000; const done = () => { if (tok!==token) return; setSpeaking(false); advance(); };
+    if (synth && voice){
+      const u = new SpeechSynthesisUtterance(text); u.voice = voice; u.lang = voice.lang; u.rate = rate(); T.hasBoundary = false;
+      u.onstart = () => { if (tok===token) setSpeaking(true); };
+      u.onboundary = e => { if (tok!==token || e.name==='sentence') return; T.hasBoundary = true; T.target = 0.55+Math.random()*0.45; caption(e.charIndex); };
+      u.onend = done; u.onerror = e => { if (tok!==token || e.error==='interrupted' || e.error==='canceled') return; silent(tok,text,est); };
+      synth.speak(u);
+      timers.push(setTimeout(()=>{ if (tok===token && !T.speaking && !synth.speaking) silent(tok,text,est); }, 2500));
+      timers.push(setTimeout(done, est*2.2+4000));
+    } else silent(tok,text,est);
+  }
+  function silent(tok,text,est){ if (tok!==token) return; clear(); T.hasBoundary=false; setSpeaking(true);
+    const starts=[]; let pos=0; text.split(/(\s+)/).forEach(p=>{ if(p.trim()) starts.push(pos); pos+=p.length; });
+    starts.forEach((c,k)=>timers.push(setTimeout(()=>{ if(tok===token) caption(c); }, est*k/starts.length)));
+    timers.push(setTimeout(()=>{ if(tok!==token) return; setSpeaking(false); advance(); }, est+250)); }
+  function advance(){ if (!playing) return; ui++;
+    if (ui >= sents[si].length){ if (si >= slides.length-1){ stop(); markWatched(); return; } si++; ui=0; showSlide(); const tok=token; timers.push(setTimeout(()=>{ if(playing&&tok===token) speak(); }, 900)); return; }
+    speak(); }
+  function markWatched(){ if (!st.watched){ st.watched = true; save(); renderSteps(); } keyCard.hidden = false; if (plan.path!=='fast') { plainCard.hidden = false; plainBtn.textContent='Hide plain words'; } cap.innerHTML = '<b>End of the lesson.</b> Now try the quick check below.'; }
+  playBtn.onclick = () => playing ? stop() : play(); big.onclick = play;
+  prevBtn.onclick = () => { const was = playing; stop(); si = Math.max(0, si-1); ui=0; showSlide(); if (was) play(); };
+  nextBtn.onclick = () => { if (mode==='read' && si===slides.length-1){ markWatched(); checkCard.scrollIntoView({behavior:'smooth'}); return; } const was = playing; stop(); si = Math.min(slides.length-1, si+1); ui=0; showSlide(); if (was) play(); };
+  player = {stop};
+
+  // --- CHECK (with confidence and adaptive second chance)
+  const checkCard = h('div',{class:'card'}); main.append(checkCard);
+  function renderCheck(){
+    checkCard.innerHTML=''; checkCard.append(h('div',{class:'eyebrow'},'Quick check'));
+    const c = les.check;
+    if (st.check){ // already answered: show summary + allow retry practice
+      checkCard.append(h('p',{class:'q'}, c.q), h('p',{class:'fb'}, st.check.ok ? h('span',{class:'pill good'},'Right first time') : h('span',{class:'pill warn'},'Missed first time'), ' ', c.e),
+        st.retry ? h('p',{class:'fb'}, 'Second chance: ', st.retry.ok ? h('span',{class:'pill good'},'right') : h('span',{class:'pill bad'},'missed')) : null,
+        h('div',{class:'row',style:'margin-top:8px'}, h('button',{class:'btn small',type:'button',onclick:()=>{ askQuestion(checkCard, c, true, ()=>{}); }},'Practise again (not scored)')));
+      return;
+    }
+    askQuestion(checkCard, c, false, (ok, conf) => {
+      st.check = {ok, conf}; save(); renderSteps();
+      if (!ok && c.retry){
+        plainCard.hidden = false; plainBtn.textContent='Hide plain words';
+        const r = h('div',{style:'margin-top:14px'}, h('div',{class:'plain'}, h('b',null,'Let\'s look at it another way'), h('ul',null, les.plain.map(p=>h('li',null,p)))));
+        const rq = h('div',{style:'margin-top:12px'}); r.append(h('div',{class:'eyebrow',style:'margin-top:12px'},'Second chance'), rq); checkCard.append(r);
+        askQuestion(rq, c.retry, false, (ok2) => { st.retry = {ok:ok2}; save(); if (!ok2) rq.append(h('p',{class:'fb'}, h('span',{class:'pill warn'},'Tip'),' Try the lesson again in Read mode, at your own pace. It is marked for review on your progress page.')); caseCard.hidden=false; }, true);
+      } else caseCard.hidden = false;
+    });
+  }
+  // --- CASE simulation
+  const caseCard = h('div',{class:'card',hidden: !st.check}); main.append(caseCard);
+  function renderCase(){
+    const sc = les.scenario; caseCard.innerHTML='';
+    caseCard.append(h('div',{class:'eyebrow'},'Case simulation'), h('h3',null, sc.title), h('p',{class:'case-set'}, sc.setting));
+    const maxPts = sc.steps.length*2; let pts = 0, k = 0;
+    const host = h('div'); caseCard.append(host);
+    if (st.caseDone){ host.append(h('p',{class:'fb'}, h('span',{class: st.caseScore>=maxPts*0.75?'pill good':st.caseScore>=maxPts/2?'pill warn':'pill bad'}, `You scored ${st.caseScore} of ${maxPts}`), ' ', h('button',{class:'btn small',type:'button',onclick:()=>{ st.caseDone=false; st.caseScore=0; save(); renderCase(); }},'Try the case again'))); finishRow(); return; }
+    function step(){
+      const s = sc.steps[k]; const box = h('div',{class:'stepbox'}, h('p',{class:'q'}, `${k+1}. ${s.prompt}`)); const opts = h('div',{class:'opts'}); const fb = h('div',{class:'fb'});
+      s.choices.forEach(ch => { const b = h('button',{class:'opt',type:'button'}, ch.t); b.onclick = () => {
+        opts.querySelectorAll('.opt').forEach(x=>x.disabled=true); b.classList.add(ch.s===2?'right':ch.s===1?'part':'wrong');
+        if (ch.s<2){ const best = s.choices.find(c=>c.s===2); if (best) [...opts.children].find(x=>x.textContent===best.t).classList.add('right'); }
+        pts += ch.s; fb.innerHTML = `<b>${ch.s===2?'Good call.':ch.s===1?'Partly.':'Not the best choice.'}</b> ${ch.fb}`;
+        k++; if (k < sc.steps.length) step(); else { st.caseDone = true; st.caseScore = pts; st.caseMax = maxPts; st.done = st.done || !!st.check; save(); renderSteps();
+          host.append(h('p',{class:'fb',style:'margin-top:12px'}, h('span',{class: pts>=maxPts*0.75?'pill good':pts>=maxPts/2?'pill warn':'pill bad'}, `Case score: ${pts} of ${maxPts}`))); finishRow(); } };
+        opts.append(b); });
+      box.append(opts, fb); host.append(box);
+    }
+    step();
+  }
+  function finishRow(){
+    st.done = !!(st.check && st.caseDone); save();
+    const next = i < CH.lessons.length-1 ? h('button',{class:'btn primary',type:'button',onclick:()=>go('l'+(i+1))}, `Next: lesson ${i+2}`) : h('button',{class:'btn primary',type:'button',onclick:()=>go('final')}, 'Go to the final case test');
+    caseCard.append(h('div',{class:'row',style:'margin-top:14px'}, next, h('button',{class:'btn',type:'button',onclick:()=>go('progress')},'See my progress')));
+  }
+  renderCheck(); renderCase(); layout();
+}
+
+/* generic question with confidence rating */
+function askQuestion(host, q, practice, onDone, isRetry){
+  const box = h('div'); host.append(box);
+  if (!isRetry || true) box.append(h('p',{class:'q'}, q.q));
+  let conf = null;
+  const confSeg = seg([['sure','I\'m sure'],['unsure','I\'m not sure']], null, v=>conf=v, 'Confidence');
+  if (!practice) box.append(h('div',{class:'conf'}, h('span',null,'Before you answer, how sure are you?'), confSeg, h('span',{style:'font-size:.8rem'},'(optional, helps your self-awareness score)')));
+  const opts = h('div',{class:'opts'}); const fb = h('div',{class:'fb'});
+  q.o.forEach((o,j)=>{ const b = h('button',{class:'opt',type:'button'}, o); b.onclick = () => {
+    const ok = j===q.a; opts.querySelectorAll('.opt').forEach(x=>x.disabled=true); b.classList.add(ok?'right':'wrong'); if (!ok) opts.children[q.a].classList.add('right');
+    fb.innerHTML = `<b>${ok?'Right.':'Not quite.'}</b> ${q.e}`; onDone(ok, conf); };
+    opts.append(b); });
+  box.append(opts, fb);
+}
+
+/* ---------------- FINAL case test ---------------- */
+function renderFinal(main){
+  const M = metrics();
+  main.append(h('div',null, h('div',{class:'eyebrow'},'Final case test'), h('h2',{style:'font-size:1.8rem;margin-top:4px'},'Check your learning path'), h('p',{class:'lede',style:'margin-top:6px'}, `${CH.test.length} short questions across all ${CH.lessons.length} lessons. You see the answer after each one. Your latest attempt counts towards your learning index, and the results show which lessons to revisit.`)));
+  if (M.done < CH.lessons.length) main.append(h('div',{class:'card',style:'background:var(--signal-soft)'}, h('p',null, `You have finished ${M.done} of ${CH.lessons.length} lessons. You can take the test now, but you will probably score higher after finishing them.`)));
+  const host = h('div',{class:'card'}); main.append(host);
+  if (S.test) { host.append(h('p',null, h('span',{class:'pill acc'}, `Last attempt: ${S.test.score} of ${CH.test.length}`), ` · ${S.test.attempts} attempt${S.test.attempts>1?'s':''}`), h('div',{class:'row',style:'margin-top:10px'}, h('button',{class:'btn primary',type:'button',onclick:()=>{ host.innerHTML=''; runTest(host); }},'Take the test again'), h('button',{class:'btn',type:'button',onclick:()=>go('progress')},'See my results'))); return; }
+  host.append(h('button',{class:'btn primary',type:'button',onclick:()=>{ host.innerHTML=''; runTest(host); }},'Start the test'));
+}
+function runTest(host){
+  const answers = []; let k = 0;
+  const prog = h('p',{class:'eyebrow'}); host.append(prog); const qhost = h('div'); host.append(qhost);
+  function next(){
+    qhost.innerHTML=''; prog.textContent = `Question ${k+1} of ${CH.test.length} · from lesson ${CH.test[k].lesson+1}: ${CH.lessons[CH.test[k].lesson].title}`;
+    askQuestion(qhost, CH.test[k], false, (ok, conf) => { answers.push({ok, conf, lesson: CH.test[k].lesson});
+      qhost.append(h('div',{class:'row',style:'margin-top:12px'}, h('button',{class:'btn primary',type:'button',onclick:()=>{ k++; if (k<CH.test.length) next(); else finish(); }}, k<CH.test.length-1?'Next question':'See my results'))); });
+  }
+  function finish(){ const score = answers.filter(a=>a.ok).length; S.test = {answers, score, attempts:(S.test?S.test.attempts:0)+1, at:Date.now()}; save(); go('progress'); }
+  next();
+}
+
+/* ---------------- PROGRESS: learning index, advice, certificate ---------------- */
+function gaugeSVG(v){
+  const r=60, c=2*Math.PI*r, f=c*v/100;
+  return `<svg viewBox="0 0 150 150" role="img" aria-label="Learning index ${v} out of 100"><circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="14"/><circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--accent)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${f} ${c}" transform="rotate(-90 75 75)"/><text x="75" y="80" text-anchor="middle" font-size="34" font-weight="700" fill="var(--ink)" font-family="JetBrains Mono, monospace">${v}</text><text x="75" y="102" text-anchor="middle" font-size="11" fill="var(--muted)">out of 100</text></svg>`;
+}
+function advice(){
+  const out = []; const n = CH.lessons.length;
+  const testBy = {}; if (S.test) S.test.answers.forEach(a=>{ (testBy[a.lesson] = testBy[a.lesson]||{ok:0,n:0}); testBy[a.lesson].n++; if (a.ok) testBy[a.lesson].ok++; });
+  const weak = [];
+  for (let i=0;i<n;i++){ const l = S.lessons[i]; const reasons = [];
+    if (l && l.check && !l.check.ok) reasons.push('missed the quick check');
+    if (l && l.caseDone && l.caseScore < l.caseMax*0.5) reasons.push(`scored ${l.caseScore} of ${l.caseMax} on the case`);
+    if (testBy[i] && testBy[i].ok < testBy[i].n) reasons.push(`${testBy[i].n-testBy[i].ok} final-test question${testBy[i].n-testBy[i].ok>1?'s':''} wrong`);
+    if (reasons.length) weak.push([i, reasons]); }
+  weak.sort((a,b)=>b[1].length-a[1].length).slice(0,3).forEach(([i,r])=>out.push(['Revisit', `Lesson ${i+1}, ${CH.lessons[i].title}: you ${r.join(', ')}. Try it in Read mode and open "Explain more simply".`, 'l'+i]));
+  const nf = [...Array(n).keys()].find(i=>!(S.lessons[i]&&S.lessons[i].done));
+  if (nf!==undefined) out.push(['Next', `Carry on with lesson ${nf+1}, ${CH.lessons[nf].title}.`, 'l'+nf]);
+  else if (!S.test) out.push(['Next', 'All lessons done. Take the final case test to check your learning path.', 'final']);
+  const M = metrics();
+  if (M.calN >= 4 && M.C < 0.6) out.push(['Self-awareness', 'Your confidence often did not match your answers. In clinical work, knowing when you are unsure matters as much as knowing the answer. Keep rating your confidence.', null]);
+  if (S.plan && S.secs > 0){ const done = Object.values(S.lessons).filter(l=>l.done); const avg = done.length ? done.reduce((a,l)=>a+l.secs,0)/done.length/60 : 0;
+    if (avg >= 0.5) out.push(['Your pace', `You spend about ${avg.toFixed(1)} minutes per lesson. ${avg > 6 ? 'Taking your time is fine. Shorter sittings may suit you better: try 5-minute sittings on the Start page.' : avg < 2.5 ? 'You move quickly. If the cases feel easy, the Fast track path lets you skip straight to them.' : 'That fits your plan well.'}`, null]); }
+  if (!out.length) out.push(['Well done', 'No gaps found. You could teach this chapter to a colleague.', null]);
+  return out;
+}
+function renderProgress(main){
+  const M = metrics();
+  main.append(h('div',null, h('div',{class:'eyebrow'},'My progress'), h('h2',{style:'font-size:1.8rem;margin-top:4px'},'Your learning index'), h('p',{class:'lede',style:'margin-top:6px'}, S.test ? 'Based on your lessons, cases and final test.' : 'Provisional until you take the final case test.')));
+  const dims = [['Knowledge', M.K, 'Quick checks right first time, plus final-test answers'], ['Applying it', M.A, 'Points from the case simulations'], ['Self-awareness', M.C, 'How often your confidence matched your answer'], ['Completion', M.P, 'Lessons finished and final test taken']];
+  const dimsEl = h('div',{class:'dims'}, dims.map(([n,v,d])=>h('div',null, h('div',{class:'dim'}, h('span',null,n), h('div',{class:'track'}, h('div',{class:'fill',style:`width:${v==null?0:pct(v)}%`})), h('output',null, v==null?'—':pct(v)+'%')), h('div',{style:'font-size:.78rem;color:var(--muted);margin:-4px 0 0'}, d))));
+  const ladder = h('div',{class:'ladder'}, LEVELS.map(l=>h('div',{class: l[1]===M.level?'on':''}, l[1], h('br'), `${l[0]}+`)));
+  main.append(h('div',{class:'card'}, h('div',{class:'gauge'}, h('div',{html:gaugeSVG(M.index)}), h('div',{style:'flex:1;min-width:240px'}, h('h3',null, M.level), h('p',{class:'lede'}, M.levelText), ladder)), h('div',{style:'margin-top:16px'}, dimsEl),
+    h('p',{class:'foot',style:'margin-top:12px'},'How it is worked out: knowledge 35%, applying it 35%, self-awareness 15%, completion 15%. Levels follow Benner\'s "novice to expert" stages used in clinical education.')));
+  const adv = h('div',{class:'advice'}, advice().map(([t,txt,v])=>h('div',null, h('span',{class:'pill acc',style:'flex:none'},t), h('span',{style:'flex:1'},txt), v ? h('button',{class:'btn small',type:'button',onclick:()=>go(v)},'Go') : null)));
+  main.append(h('div',{class:'card'}, h('h3',null,'What to do next'), adv));
+  const rows = CH.lessons.map((les,i)=>{ const l = S.lessons[i]||{}; return h('tr',null, h('td',null, `${i+1}. ${les.title}`), h('td',null, l.watched?'✓':'—'), h('td',null, l.check ? (l.check.ok ? h('span',{class:'pill good'},'Right') : h('span',{class:'pill warn'},'Missed')) : '—'), h('td',null, l.caseDone ? `${l.caseScore}/${l.caseMax}` : '—'), h('td',{class:'mono'}, l.secs ? (l.secs<60 ? '<1 min' : Math.round(l.secs/60)+' min') : '—')); });
+  main.append(h('div',{class:'card'}, h('h3',null,'Lesson by lesson'), h('div',{class:'tablewrap'}, h('table',{class:'t'}, h('thead',null,h('tr',null, ['Lesson','Watched','Check','Case','Time'].map(t=>h('th',null,t)))), h('tbody',null,rows))),
+    S.test ? h('p',{style:'margin-top:10px'}, h('span',{class:'pill acc'}, `Final test: ${S.test.score} of ${CH.test.length}`)) : null));
+  // certificate
+  const nameIn = h('input',{type:'text',id:'certName',placeholder:'Your name as it should appear',value:S.name||''});
+  const certBtn = h('button',{class:'btn primary',type:'button'},'Download certificate');
+  const note = h('p',{class:'foot'});
+  const eligible = S.test && M.index >= 60;
+  certBtn.disabled = !eligible; note.textContent = eligible ? 'Saves a picture of your certificate. Your score is calculated in your own browser, so keep the file as your record.' : 'Available once you have taken the final case test and reached Competent (60 or more).';
+  certBtn.onclick = () => { S.name = nameIn.value.trim(); save(); makeCert(S.name || 'Learner', M); };
+  main.append(h('div',{class:'card'}, h('h3',null,'Certificate'), h('div',{class:'row'}, nameIn, certBtn), note,
+    h('div',{class:'row',style:'margin-top:14px'}, h('button',{class:'btn small',type:'button',onclick:()=>{ resetBox.hidden = false; }},'Start this chapter again'))));
+  const resetBox = h('div',{class:'card',hidden:true,style:'background:var(--bad-soft)'}, h('p',null,'This clears your plan, answers and scores for this chapter in this browser. It cannot be undone.'), h('div',{class:'row',style:'margin-top:10px'}, h('button',{class:'btn',type:'button',onclick:()=>{ S = blank(); save(); go('start'); }},'Yes, clear this chapter'), h('button',{class:'btn',type:'button',onclick:()=>{ resetBox.hidden=true; }},'Keep my progress')));
+  main.append(resetBox);
+}
+function makeCert(name, M){
+  const c = document.createElement('canvas'); c.width = 1600; c.height = 1130; const x = c.getContext('2d');
+  x.fillStyle = '#FFFFFF'; x.fillRect(0,0,1600,1130); x.strokeStyle = '#0E6B66'; x.lineWidth = 14; x.strokeRect(40,40,1520,1050); x.lineWidth = 2; x.strokeRect(70,70,1460,990);
+  x.fillStyle = '#0E6B66'; x.textAlign = 'center'; x.font = '600 30px Georgia, serif'; x.fillText('A CLINICAL GUIDE TO AI IN HEALTHCARE', 800, 180);
+  x.fillStyle = '#14232A'; x.font = '600 72px Georgia, serif'; x.fillText('Certificate of learning', 800, 290);
+  x.font = '28px Arial, sans-serif'; x.fillStyle = '#55686D'; x.fillText('This is to record that', 800, 380);
+  x.fillStyle = '#14232A'; x.font = '600 64px Georgia, serif'; x.fillText(name.slice(0,48), 800, 470);
+  x.font = '28px Arial, sans-serif'; x.fillStyle = '#55686D'; x.fillText('has completed', 800, 550);
+  x.fillStyle = '#14232A'; x.font = '600 40px Georgia, serif'; x.fillText((CH.num==='A'?'Appendix A: ':'Chapter '+CH.num+': ') + CH.title, 800, 620, 1400);
+  x.fillStyle = '#0E6B66'; x.font = '600 46px Arial, sans-serif'; x.fillText(`Learning index ${M.index} / 100  ·  ${M.level}`, 800, 740);
+  x.fillStyle = '#55686D'; x.font = '24px Arial, sans-serif';
+  x.fillText(`Knowledge ${pct(M.K)}%   ·   Applying it ${pct(M.A)}%   ·   Self-awareness ${M.C==null?'—':pct(M.C)+'%'}   ·   Final test ${S.test.score}/${CH.test.length}`, 800, 800);
+  x.fillText('Issued ' + new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) + '  ·  Self-assessed online course record, calculated in the learner\'s browser', 800, 980);
+  c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `certificate-${CH.id}.png`; document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000); });
+}
+
+/* ---------------- boot ---------------- */
+$('#chNum').textContent = CH.num==='A' ? 'Appendix A' : 'Chapter '+CH.num;
+$('#chTitle span').textContent = CH.title;
+const hv = (location.hash||'').slice(1);
+go(views().includes(hv) ? hv : (S.plan ? 'l'+firstUnfinished() : 'start'));
+</script>
+
+</body>
+</html>

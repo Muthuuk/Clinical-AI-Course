@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chapter 4 · Building a Clinical AI System</title>
+<meta name="description" content="One real question from urology, and a whole AI system built around it, showing that everything around the model matters as much as the model.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky top bar (course link, chapter, live Learning Index) + sticky top menu of lessons.
+   Each lesson = Watch (slide, Sam, captions) -> Key point -> Quick check with confidence -> Case simulation.
+   Start tab sets the personal plan; Final tab is the chapter case test; Progress tab shows the index and advice. */
+:root{
+  --bg:#F3F6F6; --surface:#FFFFFF; --surface-2:#E9EFEF; --ink:#14232A; --muted:#55686D; --line:#D2DCDD;
+  --accent:#0E6B66; --accent-soft:#D6ECEA; --signal:#B97A06; --signal-soft:#F7EBD2;
+  --good:#2C7A4B; --good-soft:#DCEFE3; --bad:#AE3434; --bad-soft:#F6DEDE; --info:#2D5B8A; --info-soft:#DDE8F4;
+  --f-display:"Newsreader", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --info:#7FA9D8; --info-soft:#1B2A3B; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --info:#7FA9D8; --info-soft:#1B2A3B; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;margin:0}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+button,select,input{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:16px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:12px;padding-block:9px;flex-wrap:wrap}
+.bar .home{font-size:.85rem;font-weight:600;text-decoration:none;white-space:nowrap}
+.bar h1{font-size:1.2rem;flex:1 1 240px;min-width:0}
+.bar h1 small{display:block;font-family:var(--f-body);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.idx{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 12px 4px 6px;cursor:pointer}
+.idx b{font-family:var(--f-mono);font-size:1rem;background:var(--accent);color:var(--surface);border-radius:99px;padding:1px 8px}
+.idx span{font-size:.82rem;color:var(--muted)}
+.menu{display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
+.menu button{flex:none;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;cursor:pointer;font-size:.86rem;white-space:nowrap}
+.menu button[aria-current="true"]{background:var(--accent);color:var(--surface);border-color:var(--accent);font-weight:600}
+.menu .dot{width:9px;height:9px;border-radius:50%;border:1.5px solid currentColor;opacity:.6}
+.menu .dot.done{background:var(--good);border-color:var(--good);opacity:1}
+.menu .dot.part{background:var(--signal);border-color:var(--signal);opacity:1}
+main{padding-block:20px 60px;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.card h3{font-size:1.25rem;margin-bottom:6px}
+.eyebrow{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.lede{color:var(--muted);max-width:68ch}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:.92rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.small{padding:5px 10px;font-size:.84rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer;font-size:.88rem;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:600}
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.steps span{font-size:.8rem;padding:3px 10px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.steps span.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.steps span.ok{background:var(--good-soft);color:var(--good);font-weight:600}
+.stage{position:relative;aspect-ratio:16/9;width:100%;background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.slidetag{position:absolute;left:10px;top:10px;background:rgba(10,30,34,.78);color:#fff;font-size:.75rem;padding:3px 9px;border-radius:99px;font-family:var(--f-mono)}
+.bigplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,20,22,.35);border:0;cursor:pointer;color:#fff;flex-direction:column;gap:8px;font-weight:600}
+.bigplay span.c{width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.speaker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;margin-top:10px}
+.tutor{width:96px;aspect-ratio:1/1;border-radius:50%;background:var(--accent-soft);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.tutor.speaking{box-shadow:0 0 0 3px var(--accent)}
+.tutor svg{width:100%;height:100%;display:block}
+.tutor-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;color:var(--muted)}
+.cap{min-height:4.4em;background:var(--surface-2);border-radius:8px;padding:10px 14px;font-size:1.06rem}
+.cap .w{color:var(--muted)} .cap .w.past{color:var(--ink)} .cap .w.now{background:var(--signal-soft);color:var(--ink);border-radius:3px;box-shadow:0 0 0 2px var(--signal-soft)}
+.read{background:var(--surface-2);border-radius:8px;padding:12px 16px;display:flex;flex-direction:column;gap:8px;font-size:1.04rem;max-width:75ch}
+.ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.ctrls .grow{flex:1}
+.ctrls select{padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--surface);max-width:210px}
+.ctrls label{font-size:.84rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.key{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:var(--signal-soft);border-radius:10px;padding:12px 16px}
+.key b.k{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--signal);padding-top:3px}
+.key p{font-weight:600;max-width:72ch}
+.plain{background:var(--info-soft);border-radius:10px;padding:12px 16px}
+.plain b{display:block;font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--info);margin-bottom:4px}
+.plain ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.q{font-weight:600;font-size:1.04rem;max-width:72ch;margin-bottom:8px}
+.conf{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.86rem;color:var(--muted);margin-bottom:8px}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 13px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.part{border-color:var(--signal);background:var(--signal-soft)}
+.fb{font-size:.94rem;max-width:72ch;margin-top:8px}
+.case-set{border-left:3px solid var(--accent);padding:4px 0 4px 12px;color:var(--muted);margin-bottom:12px;max-width:75ch}
+.stepbox{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}.tutor{width:72px}}
+.gauge{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.gauge svg{width:150px;height:150px;flex:none}
+.dims{display:flex;flex-direction:column;gap:9px;flex:1;min-width:240px}
+.dim{display:grid;grid-template-columns:minmax(120px,170px) 1fr 48px;gap:10px;align-items:center;font-size:.9rem}
+.dim .track{height:12px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.dim .fill{height:100%;background:var(--accent);border-radius:99px}
+.dim output{font-family:var(--f-mono);text-align:right;font-size:.85rem}
+.ladder{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:12px}
+.ladder div{border-radius:8px;padding:8px;font-size:.8rem;text-align:center;background:var(--surface-2);color:var(--muted)}
+.ladder div.on{background:var(--accent);color:var(--surface);font-weight:700}
+@media (max-width:560px){.ladder{grid-template-columns:repeat(2,minmax(0,1fr))}}
+table.t{width:100%;border-collapse:collapse;font-size:.9rem}
+table.t th,table.t td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+table.t th{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+.pill{display:inline-flex;border-radius:99px;padding:2px 9px;font-size:.78rem;font-weight:600;background:var(--surface-2)}
+.pill.good{background:var(--good-soft);color:var(--good)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.warn{background:var(--signal-soft);color:var(--signal)} .pill.acc{background:var(--accent-soft);color:var(--accent)}
+.advice{display:flex;flex-direction:column;gap:8px}
+.advice div{display:flex;gap:10px;align-items:flex-start;background:var(--surface-2);border-radius:8px;padding:9px 12px}
+.plan{display:flex;flex-direction:column;gap:6px}
+.plan div{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.plan b{min-width:90px}
+.foot{font-size:.8rem;color:var(--muted);max-width:80ch}
+input[type=text]{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);min-width:0;width:260px;max-width:100%}
+@media (max-width:600px){.bar{gap:8px;padding-block:6px}.bar h1{font-size:1rem;flex-basis:150px}.bar h1 small{font-size:.66rem}.idx span{display:none}.bar .home{font-size:.78rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top"><div class="wrap">
+  <div class="bar">
+    <a class="home" href="../index.html">← All chapters</a>
+    <h1 id="chTitle"><small id="chNum"></small><span></span></h1>
+    <button class="idx" id="idxChip" type="button" title="Your learning index for this chapter"><b id="idxVal">0</b><span id="idxLvl">Novice</span></button>
+  </div>
+  <nav class="menu" id="menu" aria-label="Chapter sections"></nav>
+</div></header>
+<main class="wrap" id="main"></main>
+
+<script>
+const CH = {"id": "ch04", "num": "4", "title": "Building a Clinical AI System", "summary": "One real question from urology, and a whole AI system built around it, showing that everything around the model matters as much as the model.", "outcomes": ["Say what sets bladder pain syndrome apart from overactive bladder", "Explain why a symptom tool can save patients from an invasive test", "Spot cheating when data is balanced before the split", "Read a SHAP explanation as an itemised receipt for a decision", "Explain why a model that says 'not sure' and a clinician gate make a tool safer", "Score any clinical AI tool against six readiness checks"], "starter": [{"q": "Two bladder conditions share urgency, frequency and waking at night. Which symptom separates them?", "o": ["Pain that worsens as the bladder fills", "Waking at night", "A sudden urge to go"], "a": 0}, {"q": "A team balances their whole dataset with invented examples, then splits it and reports 99 per cent accuracy. What should you think?", "o": ["Excellent, adopt it", "Suspicious, the test set has been contaminated", "Normal for medical AI"], "a": 1}, {"q": "A model refuses to label about one in eight patients and sends them to a specialist. Is this a weakness?", "o": ["Yes, a good model always answers", "No, routing uncertain cases to a human is a safety feature", "Only if the specialist agrees"], "a": 1}], "lessons": [{"title": "Two conditions, one clue", "minutes": 2, "slides": [{"img": 3, "say": ["Welcome to Chapter 4, Building a Clinical AI System. I'm Sam, your tutor.", "This chapter takes one real medical question and builds a whole AI system around it, step by step.", "The question comes from urology. How do you tell overactive bladder from bladder pain syndrome?", "Both cause the same three everyday symptoms. A sudden, urgent need to pass urine. Going often. And waking at night to go.", "One difference matters. Pain. Bladder pain syndrome hurts, and the pain gets worse as the bladder fills. Overactive bladder has urgency but no pain.", "That single clue is what the tool will learn to read.", "Getting this wrong is common. In primary care, around four in ten patients are misdiagnosed at first. Many wait years for the right label, often on the wrong treatment meanwhile."]}, {"img": 4, "say": ["Here is just enough anatomy. Urine arrives from the kidneys, collects in the bladder, and leaves through a tube called the urethra.", "The bladder wall is a muscle called the detrusor. Two ring-shaped muscles act as taps at the outlet.", "Think of a balloon with a tap. Filling it slowly with the tap shut is storage. Opening the tap only when you choose is emptying.", "Urgency is the balloon squeezing itself at the wrong time. Pain on filling is the balloon wall being sore.", "Almost every bladder symptom is this balance going wrong."]}], "keyPoint": "Both conditions share urgency, frequency and night-time waking. Pain that worsens as the bladder fills points to bladder pain syndrome.", "plain": ["Overactive bladder: urgency, going often, waking at night, no pain.", "Bladder pain syndrome: the same, plus pain that grows as the bladder fills.", "Misdiagnosis is common and patients can wait years for the right label.", "Bladder as a balloon with a tap: squeezing at the wrong time is urgency, a sore wall is pain."], "check": {"q": "A patient has urgency, goes often and wakes at night, with no pain. Which condition does this fit?", "o": ["Bladder pain syndrome", "Overactive bladder", "Neither, pain is always present"], "a": 1, "e": "Urgency, frequency and night-time waking without pain fits overactive bladder. Pain on filling would point to bladder pain syndrome.", "retry": {"q": "In the balloon picture, what is urgency?", "o": ["The balloon squeezing itself at the wrong time", "The balloon wall being sore", "The tap being stuck shut"], "a": 0, "e": "Urgency is the bladder muscle squeezing when it should be relaxed and storing."}}, "scenario": {"title": "The GP's dilemma", "setting": "You are a GP. Mrs Patel, 52, has had urgency and frequency for two years and has been treated for overactive bladder without benefit. Today she mentions a deep ache that builds as her bladder fills.", "steps": [{"prompt": "What does the new detail suggest?", "choices": [{"t": "Her overactive bladder is getting worse", "s": 0, "fb": "Pain on filling is not part of overactive bladder. It is the key clue for bladder pain syndrome."}, {"t": "Bladder pain syndrome should now be considered", "s": 2, "fb": "Right. Pain that worsens as the bladder fills is the single symptom that separates the two."}, {"t": "The pain is unrelated to her bladder", "s": 0, "fb": "Pain linked to filling is exactly the clue to listen for."}]}, {"prompt": "Why does the chapter say a tool for this question is worth building carefully?", "choices": [{"t": "Because the conditions are very rare", "s": 0, "fb": "No. The problem is that they are common and often confused."}, {"t": "Because misdiagnosis is common and patients wait years, often on the wrong treatment", "s": 2, "fb": "Right. Around four in ten are misdiagnosed at first, and the wait for the right label can be years."}, {"t": "Because the reference test is cheap and quick", "s": 0, "fb": "The opposite. The reference test is invasive, which is why an early symptom tool helps."}]}]}}, {"title": "The reference test, and where AI stands", "minutes": 3, "slides": [{"img": 6, "say": ["Who looks after these conditions? Surgical urologists remove or repair tissue. Functional urologists manage how the bladder behaves over time.", "Our two conditions belong to functional urology. They are judged from symptoms. So our tool should use the same everyday evidence a clinician weighs, and show its reasoning.", "The reference test is called video-urodynamics. A thin tube fills the bladder while sensors measure pressure and an X-ray films it.", "There is one friendly sum. To find what the bladder muscle itself is doing, take the total bladder pressure and subtract the belly pressure from coughing or straining.", "It is the gold standard, but it is invasive, uncomfortable, and carries a little radiation.", "So if a simple symptom tool can confidently sort the clear cases, the hard test can be saved for the uncertain ones. That is the tool we build."]}, {"img": 7, "say": ["How mature is AI in urology, really? Read down the right-hand column.", "In screening and triage, symptom tools flag who needs attention. They assist, and our example lives here. In diagnosis, computer vision reads scans, again as an assistant. In surgery, the surgeon stays fully in control. Follow-up tools are only emerging.", "And a machine that decides alone? Research only. Not in use anywhere.", "So the honest headline: AI in urology is useful, but mostly as a careful assistant. The skill is handling uncertainty, explanation and testing well."]}], "keyPoint": "Video-urodynamics is the gold standard but invasive. A symptom tool that sorts the clear cases saves the hard test for the uncertain ones. AI here assists, it does not decide.", "plain": ["Functional urology manages bladder behaviour from symptoms, so the tool uses the same evidence.", "Video-urodynamics: a tube, pressure sensors and an X-ray. Accurate but invasive.", "Bladder muscle pressure equals total pressure minus belly pressure.", "AI in urology is an assistant. Machines that decide alone are research only."], "check": {"q": "Why is a symptom-based AI screen useful alongside video-urodynamics?", "o": ["It is more accurate than the reference test", "It replaces the reference test entirely", "It sorts clear cases so the invasive test is kept for uncertain ones"], "a": 2, "e": "Video-urodynamics is invasive and uncomfortable. A triage tool lets clinicians save it for patients who really need it.", "retry": {"q": "Where is AI in urology most mature and actually in use?", "o": ["Deciding alone without a clinician", "Assisting with screening and triage", "Replacing surgeons"], "a": 1, "e": "Deployed AI in urology assists. Full autonomy is research only, and surgeons stay in control."}}, "scenario": {"title": "The urodynamics waiting list", "setting": "You manage a urology department with a six-month wait for video-urodynamics. A supplier offers a symptom-based AI tool and says it 'diagnoses bladder conditions automatically'.", "steps": [{"prompt": "What is the realistic role for such a tool, based on this chapter?", "choices": [{"t": "Replace urodynamics so the list disappears", "s": 0, "fb": "No. The symptom tool cannot replace the reference test. It helps decide who needs it."}, {"t": "Sort the clear cases, so the invasive test is kept for genuinely uncertain patients", "s": 2, "fb": "Right. That is exactly the triage role the chapter builds."}, {"t": "Run the test faster", "s": 0, "fb": "The tool does not perform the test at all."}]}, {"prompt": "The supplier insists the tool can 'decide alone'. How mature is that kind of AI in urology?", "choices": [{"t": "Routine in most clinics", "s": 0, "fb": "No. Deployed AI in urology is assistive."}, {"t": "Common in surgery", "s": 1, "fb": "Surgical AI exists, but the surgeon stays fully in control, so it does not decide alone either."}, {"t": "Research only, not in use", "s": 2, "fb": "Right. Full autonomy is research only. Treat the claim with caution."}]}]}}, {"title": "The whole system on one page", "minutes": 3, "slides": [{"img": 8, "say": ["If you remember one picture from this chapter, make it this one. The whole system in seven boxes.", "One, frame the question. Two, get the data and choose the inputs. Three, fix the imbalance. Four, pick the model. Five, make it explain itself. Six, test it honestly. Seven, turn it into a recommendation.", "The model is only one box out of seven. The other six make it a safe clinical tool.", "Think of opening a restaurant. The recipe matters. But hygiene, good suppliers and a chef checking every plate matter just as much. Skip those and you have a demo, not a service.", "And follow the dashed line. Real patient outcomes feed back to improve the system. It is a loop."]}, {"img": 10, "say": ["Boxes one and two are about framing the question honestly. A badly framed task cannot be rescued by a clever model.", "Keep the question small. For this patient, is it more likely overactive bladder or bladder pain syndrome? One fork, the way a clinician thinks first.", "Use only early, cheap evidence a clinician already has. Symptom scores, a bladder diary and basic history.", "Ground truth is the answer key the model learns from. Its quality sets the ceiling.", "And one honesty point. This example used three hundred computer-generated patients. That is fine for building and stress-testing. But made-up patients can never prove the tool works on real ones."]}], "keyPoint": "The model is one box out of seven. Frame one small question, use early evidence, and be honest that made-up patients prove nothing about real ones.", "plain": ["Seven boxes: frame, data, balance, model, explain, test, recommend. The model is just one.", "Like a restaurant: the recipe matters, but hygiene and a chef checking plates matter as much.", "Ask one small question using evidence a clinician already has early on.", "Three hundred computer-generated patients test the plumbing, not real performance."], "check": {"q": "In the seven-box system, how many boxes are the model itself?", "o": ["One", "Four", "Seven"], "a": 0, "e": "The model is one box. Balancing, explaining, testing and the clinician gate are the other six, and they make it safe.", "retry": {"q": "Why can results on 300 computer-generated patients not prove the tool works?", "o": ["Three hundred is too many to analyse", "Made-up patients test the pipeline, not real clinical performance", "Computer-generated data cannot be used at all"], "a": 1, "e": "Synthetic data is fine for building and stress-testing. Only real patients can show clinical performance."}}, "scenario": {"title": "Framing a chest pain tool", "setting": "Your emergency department wants an AI tool for chest pain. A data scientist proposes 'a model that diagnoses every possible cause using all results, including the angiogram'.", "steps": [{"prompt": "What is wrong with that framing?", "choices": [{"t": "Nothing, more causes and more data is better", "s": 0, "fb": "A badly framed task cannot be rescued by a clever model. Keep it small and early."}, {"t": "It asks too much and uses evidence that only arrives after the decision is needed", "s": 2, "fb": "Right. Frame one clear question and use only evidence available early."}, {"t": "It should use a bigger model", "s": 0, "fb": "The problem is the framing, not the model size."}]}, {"prompt": "Which framing follows the chapter's approach?", "choices": [{"t": "Is this chest pain likely cardiac or not, using history, examination and the first ECG?", "s": 2, "fb": "Right. One fork, early cheap evidence, and a clear answer key."}, {"t": "Predict the exact diagnosis from the discharge letter", "s": 0, "fb": "The discharge letter contains the answer. That is leakage, and it arrives far too late."}, {"t": "Predict length of stay for every patient", "s": 1, "fb": "A clear question, but not the one the department asked."}]}]}}, {"title": "Balancing without cheating", "minutes": 2, "slides": [{"img": 11, "say": ["Box three is imbalance. In real clinics one condition is usually far more common than the other.", "A lazy model can score well by always guessing the common one, and miss the rare one. In diagnosis that is dangerous, because the rare case is often the one you most need to catch.", "The middle panel shows a fix called SMOTE. It invents realistic new examples of the rarer condition by blending real ones together.", "The rule in red is the one to remember. Split the data first. Then apply SMOTE to the training part only. Never touch the test set.", "Here is why. SMOTE is like adding practice questions on a rare topic so a student is not caught out. But you must not sneak those practice questions into the final exam. That would only prove the student memorised them.", "If invented data leaks into the test set, the reported score is fake. Balance the training data, never the test data.", "When you see claims of ninety-nine per cent accuracy, this is one reason to be suspicious.", "There are other fixes too, such as penalising mistakes on the rare condition more heavily. The honest habit is to try a method, write it down, and check the rare condition really improves."]}], "keyPoint": "Balance the training data, never the test data. Invented examples in the test set make the score fake.", "plain": ["One condition is usually rarer, and a lazy model just guesses the common one.", "SMOTE invents realistic extra examples of the rare condition.", "Split first, then balance only the training part.", "Practice questions must never end up in the final exam."], "check": {"q": "When should SMOTE be applied?", "o": ["To the whole dataset before splitting", "To the test set only", "To the training data only, after splitting"], "a": 2, "e": "Balancing before the split leaks invented examples into the test set and inflates the score.", "retry": {"q": "Why is a model that always guesses the common condition dangerous in diagnosis?", "o": ["It misses the rare case, which is often the one you most need to catch", "It runs too slowly", "It is too complicated to explain"], "a": 0, "e": "High accuracy from guessing the common answer hides the fact that the rare, important cases are being missed."}}, "scenario": {"title": "The 99 per cent colleague", "setting": "A colleague in your trust's data team proudly reports 99 per cent accuracy on a bladder tool. You ask how. They applied SMOTE to the whole dataset, then split it into training and test.", "steps": [{"prompt": "What has happened to the score?", "choices": [{"t": "It is reliable, because the data was balanced", "s": 0, "fb": "No. Invented examples have leaked into the test set, so the score is fake."}, {"t": "It is inflated, because invented examples ended up in the test set", "s": 2, "fb": "Right. The model was quizzed on data related to what it had already seen."}, {"t": "It is too low, because SMOTE makes tasks harder", "s": 0, "fb": "The opposite. Leakage makes the score look better than reality."}]}, {"prompt": "What should they do instead?", "choices": [{"t": "Apply SMOTE to the test set as well, for fairness", "s": 0, "fb": "Never touch the test set. It must keep its natural mix."}, {"t": "Split first, then apply SMOTE to the training part only, and re-run", "s": 2, "fb": "Right. Balance the training data, never the test data."}, {"t": "Report the 99 per cent but add a footnote", "s": 1, "fb": "Honesty helps, but the number itself is meaningless. Redo the split."}]}]}}, {"title": "A team of simple models", "minutes": 2, "slides": [{"img": 13, "say": ["Box four is choosing the model. Two ideas.", "First, fewer inputs. The team began with twenty-two and trimmed them to five that carry the signal. Pain, urgency, night-time urination, how long symptoms have lasted, and a standard symptom score.", "Fewer inputs means less chance of learning quirks, easier explanation and cheaper running. And these five are exactly what a urologist would weigh first. A quiet sign the model learned something real.", "Second, a team of models beats one. Three different simple models were used. A random forest is many yes-or-no decision trees voting together. A support vector machine draws the cleanest line between two groups. Logistic regression is a familiar statistical model.", "Each makes different kinds of mistake, so one covers another's weakness.", "Each gives a probability, not a hard yes or no, and the probabilities are averaged. This is called soft voting.", "Imagine three experienced doctors each giving a percentage. Seventy, fifty-five and sixty-five per cent pain syndrome. Averaging their confidence is steadier than a show of hands, and carries more information.", "The principle matters more than the algorithms. A few simple, explainable models are usually a better clinical choice than one giant black box. They are easier to test, explain and maintain."]}], "keyPoint": "Trim to the few inputs that matter, and average the confidence of a few simple models rather than trusting one black box.", "plain": ["Twenty-two inputs trimmed to five: pain, urgency, night-time urination, duration, symptom score.", "The five match what a urologist would check first. A good sign.", "Three simple models each give a probability, and the probabilities are averaged.", "A few explainable models beat one black box in the clinic."], "check": {"q": "What does soft voting do?", "o": ["Counts each model's yes-or-no vote and takes the majority", "Averages each model's probability into one decision", "Picks the most complex model"], "a": 1, "e": "Averaging probabilities is steadier and carries more information than counting hard votes.", "retry": {"q": "Why is it reassuring that the five inputs kept were pain, urgency, night-time urination, duration and a symptom score?", "o": ["They are the cheapest to collect", "They guarantee fairness", "They match what a urologist would weigh first, so the model probably learned real signal"], "a": 2, "e": "When the inputs match clinical reasoning, the model is less likely to be learning quirks of the dataset."}}, "scenario": {"title": "Choosing between two bids", "setting": "Two suppliers bid for your bladder tool. Supplier X offers one very large black-box model using 40 inputs. Supplier Y offers three simple models that average their confidence, using five clinically familiar inputs.", "steps": [{"prompt": "A board member says 'surely bigger is better'. What does the chapter suggest?", "choices": [{"t": "Yes, more inputs and a bigger model always win", "s": 0, "fb": "In clinical work, the simplest design that does the job is easier to test, explain and maintain."}, {"t": "A few simple, explainable models are usually the better clinical choice", "s": 2, "fb": "Right. They can be validated, explained and kept running safely."}, {"t": "Pick whichever has the higher headline accuracy", "s": 1, "fb": "Accuracy alone hides a great deal. Consider explanation and maintenance too."}]}, {"prompt": "Supplier Y's five inputs are pain, urgency, night-time urination, duration and a symptom score. What does that tell you?", "choices": [{"t": "Nothing, inputs do not matter", "s": 0, "fb": "They matter a great deal. They show what the model relies on."}, {"t": "The model may be too simple to be useful", "s": 0, "fb": "Fewer inputs reduce the chance of learning quirks and make explanation easier."}, {"t": "The model relies on what a urologist would check first, a good sign it learned real signal", "s": 2, "fb": "Right. Matching clinical reasoning is a quiet sign of a sound model."}]}]}}, {"title": "An itemised receipt", "minutes": 2, "slides": [{"img": 15, "say": ["Box five is explanation. A model that cannot explain itself will not be trusted, and increasingly will not be approved.", "The tool here is called SHAP. It treats each symptom like a player on a team and works out its fair share of the final answer. Which way it pushed, and how hard.", "The left picture is the overall view. Across all patients, which symptoms matter most on average.", "The right picture is one patient. Here pain, urgency and frequency each nudge the decision towards bladder pain syndrome.", "Think of it as an itemised receipt for the decision. Instead of the computer says pain syndrome, you get pain plus forty-six, urgency plus twenty-six, frequency plus twenty. So, pain syndrome. The clinician can check every line.", "This has two uses. It builds trust and supports the conversation with the patient.", "And it catches bugs. If one symptom always dominates, that symptom may secretly be part of the answer key. That is leakage.", "If the explanation does not match clinical reasoning, that is a reason to look closer. It is not a reason to override the doctor."]}], "keyPoint": "SHAP gives an itemised receipt for each decision. It builds trust, and it catches a symptom that secretly holds the answer.", "plain": ["SHAP shows how much each symptom pushed the decision, and which way.", "Overall view: which symptoms matter most across everyone. One-patient view: this decision.", "Like a receipt: pain plus forty-six, urgency plus twenty-six, so pain syndrome.", "If one symptom always dominates, suspect leakage."], "check": {"q": "A clinician sees that pain and urgency pushed a patient's result towards bladder pain syndrome. How does this help?", "o": ["It lets the clinician check the model relied on sensible evidence", "It raises the model's accuracy", "It removes the need for a clinician"], "a": 0, "e": "SHAP does not change the answer. It shows the reasons, so the clinician can check them.", "retry": {"q": "In the explanations, one symptom dominates every single prediction. What should the team ask?", "o": ["Whether to give it more weight", "Whether it is secretly part of the answer key", "Whether to switch explanations off"], "a": 1, "e": "A symptom that always dominates may be leaking the answer. Explanations double as a safety check."}}, "scenario": {"title": "The receipt that did not add up", "setting": "A consultant reviews a tool's explanation for Mr Okafor. It says bladder pain syndrome, driven almost entirely by 'symptom duration'. His pain score barely features, yet he describes severe pain on filling.", "steps": [{"prompt": "What does this explanation tell the consultant?", "choices": [{"t": "The tool must be right, computers do not make mistakes", "s": 0, "fb": "The reasoning does not match clinical sense. That is a reason to look closer."}, {"t": "The tool reached a plausible answer for an odd reason, so look closer", "s": 2, "fb": "Right. A receipt that does not match clinical reasoning is a warning, even when the label looks right."}, {"t": "Explanations are decoration and can be ignored", "s": 0, "fb": "Explanations are how you check the model leaned on sensible evidence."}]}, {"prompt": "The audit team finds 'symptom duration' dominates almost every prediction. What should they suspect?", "choices": [{"t": "Duration is the most important symptom medically", "s": 1, "fb": "Possibly, but a single input dominating everything is a classic sign of a deeper problem."}, {"t": "The tool needs a bigger screen", "s": 0, "fb": "Not relevant."}, {"t": "Duration may secretly be part of the answer key, a form of leakage", "s": 2, "fb": "Right. Explanations caught a possible bug. That is their second use."}]}]}}, {"title": "Test once, then a human signs off", "minutes": 3, "slides": [{"img": 17, "say": ["Box six is honest testing. About eighty per cent of the patients form a development set, split into five parts. Each part takes a turn as the check while the model learns from the rest.", "SMOTE is applied inside each learning part only.", "The other twenty per cent is a held-out test set. Think of it as a sealed exam. You open it once, at the very end, and it keeps its natural mix. Peek early and the result is worthless.", "Report several numbers, not just accuracy, which can hide poor results on the rarer condition.", "Now the standout idea. The model is allowed to say, I am not sure. About one in eight patients fall in the boundary, and they go to a specialist instead of being forced into a label.", "Uncertainty is information, not failure."]}, {"img": 19, "say": ["Box seven. A prediction alone helps nobody. It must become an action, and a human must check it.", "The model's answer and its reasons are matched to clinical guidelines. A confidence check may abstain. Then comes the clinician gate, before anything is written in the patient's record.", "The model proposes. The doctor disposes. Think of a pharmacist checking a prescription before it reaches you.", "Finally, outcomes are recorded and watched for drift, the slow slide in performance as patients or practice change. If it slips, the system flags it and can be retrained.", "So going live is the start of the work, not the end."]}], "keyPoint": "Open the sealed test set once, let the model say 'not sure', and keep a clinician at the gate. Then watch for drift.", "plain": ["The held-out test set is a sealed exam, opened once at the end.", "About one in eight uncertain patients go to a specialist instead of being force-labelled.", "The model proposes, the doctor disposes. Nothing reaches the patient without a clinician.", "After go-live, watch for drift and retrain when performance slips."], "check": {"q": "How should the held-out test set be used?", "o": ["Checked after every change to tune the model", "Balanced with SMOTE before the final test", "Opened once at the end, keeping its natural mix"], "a": 2, "e": "The test set is a sealed exam. Peeking early or balancing it makes the final score meaningless.", "retry": {"q": "What does 'the model proposes, the doctor disposes' mean?", "o": ["The doctor trains the model", "No recommendation reaches a patient without a clinician reviewing it", "The model can override the doctor when confident"], "a": 1, "e": "The clinician gate means a qualified human signs off every recommendation."}}, "scenario": {"title": "The never-unsure tool", "setting": "Your trust pilots a bladder triage tool. The supplier is proud that it 'always gives an answer, never abstains'. Six months in, nurses notice more patients being started on the wrong treatment.", "steps": [{"prompt": "What is the main risk of a tool that never says 'not sure'?", "choices": [{"t": "Confident wrong labels for genuinely uncertain patients", "s": 2, "fb": "Right. Boundary cases should go to a specialist, not be forced into a label."}, {"t": "Too many referrals to specialists", "s": 0, "fb": "The opposite. It refers nobody, which is the problem."}, {"t": "Slower clinic lists", "s": 0, "fb": "Speed is not the safety issue here."}]}, {"prompt": "You also learn that recommendations go straight into the record with no clinician review. What must change?", "choices": [{"t": "Nothing, the tool was validated", "s": 0, "fb": "Validation does not remove the need for a human gate."}, {"t": "Add a clinician gate so a qualified person signs off every recommendation", "s": 2, "fb": "Right. The model proposes, the doctor disposes."}, {"t": "Ask nurses to double-check the record afterwards", "s": 1, "fb": "Better than nothing, but the check must happen before anything is documented."}]}, {"prompt": "Performance has slipped since go-live. What does a well-designed system do?", "choices": [{"t": "Nothing, a validated model does not change", "s": 0, "fb": "Patients and practice change, so performance can drift."}, {"t": "Flag the drift so the team can investigate and retrain", "s": 2, "fb": "Right. Outcomes are watched, slippage is flagged, and the model is retrained and rechecked."}, {"t": "Remove the clinician gate to speed things up", "s": 0, "fb": "That would make things less safe, not more."}]}]}}, {"title": "Is it ready for the clinic?", "minutes": 3, "slides": [{"img": 21, "say": ["Is it ready for the clinic? This scorecard is deliberately sobering. Read down the gap column.", "Data: three hundred computer-generated patients, so no real-patient evidence yet. Labels: made by rules, so possibly noisy. Uncertainty: the cut-offs were set by hand.", "Explanations: not yet tested with clinicians. Fairness: not checked by group. Governance: a gate in the design, but no live audit data.", "Every red row is a study that still has to be done. Strong accuracy offline is the beginning of the work, not the end.", "You can score any clinical AI tool you meet against these six rows and see its biggest gap at once."]}, {"img": 22, "say": ["The gaps fall into three groups. Data and labels is the biggest. It needs real patients from several sites, with diagnoses confirmed by the reference test.", "Fairness. A model can look good on average yet fail one group. These conditions affect men and women differently and change with age. So results must be reported by group, not as one average. That is an ethical duty, not a nicety.", "The road to use. A prospective study on real patients, the medical device route, fitting into clinic routines, audit, staff training, and monitoring.", "See these as the to-do list for the next phase, not reasons to give up."]}], "keyPoint": "Six readiness checks: data, labels, uncertainty, explanations, fairness, governance. Strong offline accuracy is the start, not the end.", "plain": ["Biggest gap: no real patients yet, and labels that may be noisy.", "Cut-offs set by hand and explanations untested with clinicians.", "Fairness unknown until results are split by age and sex.", "Next phase: a real-patient study, the device route, workflow, audit, training, monitoring."], "check": {"q": "A hospital is impressed by strong accuracy on synthetic data. Which study best closes the biggest gap?", "o": ["A larger synthetic cohort", "Adding more models", "A multi-site prospective study with real patients and reference-confirmed diagnoses"], "a": 2, "e": "Synthetic data cannot prove clinical performance. Real, multi-site, reference-confirmed data is the priority.", "retry": {"q": "Why must performance be reported by group, such as age and sex?", "o": ["Because averages are hard to calculate", "Because a model can look good on average yet fail one group", "Because regulators ban averages"], "a": 1, "e": "An average can hide failure in a particular group. For these conditions, sex and age matter."}}, "scenario": {"title": "Scoring the supplier's tool", "setting": "A supplier presents a bladder tool to your procurement panel. Their evidence: 92 per cent accuracy on a synthetic cohort, labels generated by rules, no subgroup results, and no live monitoring yet.", "steps": [{"prompt": "Using the six-row scorecard, what is the single biggest gap?", "choices": [{"t": "No real-patient evidence", "s": 2, "fb": "Right. Everything else rests on this. Synthetic results prove nothing about real patients."}, {"t": "The accuracy is too low", "s": 0, "fb": "The number is not the issue. Where it came from is."}, {"t": "The slides were too long", "s": 0, "fb": "Not relevant."}]}, {"prompt": "The supplier offers to run on 10,000 synthetic patients instead. Does that help?", "choices": [{"t": "Yes, more data settles it", "s": 0, "fb": "More made-up patients still prove nothing about real ones."}, {"t": "No, the gap is real patients, not more synthetic ones", "s": 2, "fb": "Right. A prospective study on real patients across sites is what is needed."}, {"t": "Partly, if the synthetic data is more varied", "s": 1, "fb": "Variety helps stress-test the pipeline, but only real patients show clinical performance."}]}, {"prompt": "What do you ask about fairness?", "choices": [{"t": "Nothing, fairness is a research topic", "s": 0, "fb": "It is an ethical duty. These conditions differ by sex and age."}, {"t": "For results split by sex and age, not one average", "s": 2, "fb": "Right. An average can hide a group the tool fails."}, {"t": "Whether the supplier has a fairness policy", "s": 1, "fb": "A policy is not evidence. Ask for the results by group."}]}]}}, {"title": "Three things to take away", "minutes": 2, "slides": [{"img": 23, "say": ["Three things to take away.", "One. Clinical AI is a systems problem, not a modelling problem. Accuracy is necessary but not enough. Clean framing, leak-free data, explainable design, honest testing and a human gate are what protect patients.", "Two. Uncertainty is information, not failure. A model that flags the cases it cannot confidently sort is worth more than one that labels everyone. It sends the hard patients to the right people.", "Three. Honesty about limits is a clinical skill. Saying clearly what a system has not yet proven, and which studies would prove it, is what earns trust."]}, {"img": 24, "say": ["In one sentence. Building a clinical AI system means building everything around the model with as much care as the model itself. And being candid about the gap between a promising result and a safe tool.", "The next chapter looks at how such systems are governed and regulated once they leave the laboratory.", "Well done on finishing Chapter 4. Now try the final case test."]}], "keyPoint": "Clinical AI is a systems problem. Uncertainty is information. Honesty about limits earns trust.", "plain": ["The model is the easy part. The discipline around it keeps patients safe.", "Letting the model say 'not sure' sends hard cases to humans.", "Say plainly what has not been proven and what would prove it."], "check": {"q": "Which of these is one of the chapter's three key insights?", "o": ["Accuracy alone is enough to deploy a tool", "Uncertainty is information, not failure", "A model that never abstains is safest"], "a": 1, "e": "Flagging the cases it cannot confidently classify lets the model send the hardest patients to the right people.", "retry": {"q": "What does the chapter mean by 'clinical AI is a systems problem'?", "o": ["The model is one part, and the framing, data, testing and human gate around it matter as much", "Only the computer system matters", "Clinicians should build their own models"], "a": 0, "e": "The model is the easy part. Everything built around it is what keeps patients safe."}}, "scenario": {"title": "Two minutes with the chief executive", "setting": "Your chief executive asks for a two-minute summary of what makes an AI tool safe before the trust buys one.", "steps": [{"prompt": "Which message leads?", "choices": [{"t": "Buy the one with the highest accuracy", "s": 0, "fb": "Accuracy is necessary but not enough."}, {"t": "Safety comes from everything around the model: framing, data, testing and a clinician gate", "s": 2, "fb": "Right. Clinical AI is a systems problem, not a modelling problem."}, {"t": "Avoid AI entirely", "s": 0, "fb": "Too far. Well-built tools help. The point is how they are built and checked."}]}, {"prompt": "She asks whether a tool that sometimes says 'not sure' is a weaker product. You say…", "choices": [{"t": "Yes, we should insist on a tool that always answers", "s": 0, "fb": "A tool that always answers forces labels on uncertain patients."}, {"t": "No, routing uncertain cases to a specialist is a safety feature", "s": 2, "fb": "Right. Uncertainty is information, not failure."}, {"t": "It depends on the price", "s": 0, "fb": "Price does not change the safety point."}]}]}}], "test": [{"q": "A GP sees urgency and frequency plus pelvic pain that worsens as the bladder fills. Which condition does this clue point to?", "o": ["Overactive bladder", "Bladder pain syndrome", "A problem with emptying"], "a": 1, "e": "Pain that worsens on filling is the distinguishing feature of bladder pain syndrome.", "lesson": 0}, {"q": "During urodynamics the patient coughs and bladder pressure spikes. Why is a second, belly sensor needed?", "o": ["To measure the X-ray dose", "To measure how much urine is passed", "So coughing or straining is not mistaken for the bladder muscle squeezing"], "a": 2, "e": "Bladder muscle pressure is total pressure minus belly pressure, which removes the effect of coughing or straining.", "lesson": 1}, {"q": "A supplier says their urology AI 'diagnoses entirely on its own'. How mature is that kind of AI?", "o": ["Research only, not in use", "Routine in most clinics", "Standard in robotic surgery"], "a": 0, "e": "Deployed AI in urology assists. Full autonomy is research only.", "lesson": 1}, {"q": "A team wants a tool to answer 'is this chest pain cardiac or not?'. Which framing follows the chapter?", "o": ["Use every result, including invasive ones, and diagnose all causes", "One clear yes-or-no question using early, cheap evidence and a clear answer key", "Pick the most complex model first and frame the question later"], "a": 1, "e": "Good framing means one clear decision, evidence available early, and a well-defined answer key.", "lesson": 2}, {"q": "A colleague applies SMOTE to the full dataset, then splits it, and reports 99 per cent accuracy. What went wrong?", "o": ["Invented examples leaked into the test set and inflated the score", "SMOTE should have gone on the test set only", "Nothing, balancing everything is good practice"], "a": 0, "e": "Split first and balance only the training data. Otherwise the score is fake.", "lesson": 3}, {"q": "A tool for a rare condition reports 97 per cent accuracy but catches almost none of the rare cases. What has happened?", "o": ["The tool is excellent", "It is mostly guessing the common condition, which scores high but misses what matters", "The rare cases do not exist"], "a": 1, "e": "Guessing the common answer gives high accuracy and misses the rare, important cases.", "lesson": 3}, {"q": "Why does the chapter prefer three simple models that average their confidence over one giant black box?", "o": ["Because three models always score higher", "Because black boxes are illegal", "Because simple models are easier to test, explain and maintain, and they cover each other's mistakes"], "a": 2, "e": "Soft voting across a few explainable models is a better clinical choice than one opaque model.", "lesson": 4}, {"q": "A clinician reads a local SHAP explanation showing pain and urgency drove the result. What has this done?", "o": ["Shown why the model decided, so the reasoning can be checked", "Improved the model's accuracy for that patient", "Removed the need for clinician review"], "a": 0, "e": "SHAP does not change the answer. It shows the reasons so a clinician can sanity-check them.", "lesson": 5}, {"q": "A model labels every patient confidently and never abstains. Main clinical risk?", "o": ["Too many specialist referrals", "Confidently wrong labels for genuinely ambiguous patients", "Slower clinic lists"], "a": 1, "e": "Boundary cases should go to a specialist rather than being forced into a label.", "lesson": 6}, {"q": "A data team wants to look at the held-out test set after each tweak 'to see how we are doing'. What is the problem?", "o": ["It wastes computer time", "Peeking early makes the final score worthless", "Nothing, that is what the test set is for"], "a": 1, "e": "The test set is a sealed exam, opened once at the end.", "lesson": 6}, {"q": "Six months after go-live, performance on one condition slips. What should a well-built system do?", "o": ["Flag the drift so the team can investigate and retrain", "Nothing, a validated model does not change", "Remove the clinician gate"], "a": 0, "e": "Outcomes are watched for drift so slippage is caught and the model retrained.", "lesson": 6}, {"q": "The worked example has not been evaluated separately by age or sex. Why does this matter here?", "o": ["Subgroup checks are only for imaging tools", "These conditions differ by sex and age, so an average may hide failures", "Age and sex are not recorded in urology"], "a": 1, "e": "An overall figure can hide poor results in a particular group.", "lesson": 7}, {"q": "A supplier's only evidence is strong accuracy on synthetic patients. What is their tool's biggest gap?", "o": ["Too few models", "No real-patient evidence", "Too many inputs"], "a": 1, "e": "Synthetic data tests the plumbing, not clinical performance.", "lesson": 7}, {"q": "A trust writes a frank note listing what its new AI tool has not yet proven and the studies needed. The chapter would call this…", "o": ["A weakness that will put off regulators", "A clinical skill that earns trust", "Unnecessary paperwork"], "a": 1, "e": "Honesty about limitations is what earns the trust of clinicians, regulators and patients.", "lesson": 8}]};
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids){ const e=document.createElement(tag); if(attrs) for(const [k,v] of Object.entries(attrs)){ if(k==='class') e.className=v; else if(k==='html') e.innerHTML=v; else if(k.startsWith('on')) e.addEventListener(k.slice(2),v); else if(v!==false&&v!=null) e.setAttribute(k,v===true?'':v);} for(const k of kids.flat()) if(k!=null&&k!==false) e.append(k.nodeType?k:document.createTextNode(k)); return e; }
+const pad = n => String(n).padStart(2,'0');
+const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+const pct = x => Math.round(100*x);
+function seg(options, value, onChange, label){ const w = h('div',{class:'seg',role:'group','aria-label':label||''}); const bs = options.map(([v,t]) => { const b = h('button',{type:'button','aria-pressed':String(v===value)}, t); b.onclick = () => { bs.forEach(x=>x.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); onChange(v); }; return b; }); w.append(...bs); return w; }
+
+/* ---------------- learner state ---------------- */
+const KEY = 'cg:' + CH.id;
+const blank = () => ({ v:2, starter:null, plan:null, lessons:{}, test:null, secs:0, updated:0, name:'' });
+let S;
+try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY) || 'null') || {}); } catch(e){ S = blank(); }
+function save(){ S.updated = Date.now(); S.meta = {title:CH.title, num:CH.num, index:metrics().index, level:metrics().level, lessons:CH.lessons.length, done:Object.values(S.lessons).filter(l=>l.done).length, test:!!S.test};
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} renderChip(); renderMenu(); }
+function L(i){ return S.lessons[i] || (S.lessons[i] = {watched:false, check:null, retry:null, caseScore:0, caseMax:0, caseDone:false, done:false, secs:0}); }
+
+/* ---------------- metrics (Learning Index) ----------------
+   Knowledge 35%: first-attempt quick checks + latest final-test answers correct
+   Application 35%: points earned in case simulations (each choice 0–2)
+   Self-awareness 15%: how often your confidence matched your answer (sure & right, or unsure & wrong)
+   Completion 15%: lessons completed + final test taken
+   Levels follow Benner's novice-to-expert stages (shortened for a short course). */
+const LEVELS = [[0,'Novice','Starting out: knows the words, needs support to apply them'],[40,'Advanced beginner','Recognises the main ideas in familiar cases'],[60,'Competent','Applies the ideas to new cases and asks the right questions'],[80,'Proficient','Judges tools confidently and explains why to colleagues']];
+function metrics(){
+  const n = CH.lessons.length; let kOk=0,kN=0,aPts=0,aMax=0,cal=0,calN=0,done=0;
+  for (let i=0;i<n;i++){ const l = S.lessons[i]; if (!l) continue;
+    if (l.check){ kN++; if (l.check.ok) kOk++; if (l.check.conf){ calN++; if ((l.check.conf==='sure')===l.check.ok) cal++; } }
+    aPts += l.caseScore||0; aMax += l.caseDone ? (l.caseMax||0) : 0; if (l.done) done++; }
+  if (S.test){ S.test.answers.forEach(a=>{ kN++; if (a.ok) kOk++; if (a.conf){ calN++; if ((a.conf==='sure')===a.ok) cal++; } }); }
+  const K = kN? kOk/kN : 0, A = aMax? aPts/aMax : 0, C = calN? cal/calN : null, P = (done + (S.test?1:0))/(n+1);
+  const parts = [[K,.35],[A,.35],[P,.15]]; if (C!=null) parts.push([C,.15]);
+  const wsum = parts.reduce((x,p)=>x+p[1],0); const idx = Math.round(100*parts.reduce((x,p)=>x+p[0]*p[1],0)/wsum);
+  const lv = LEVELS.filter(l=>idx>=l[0]).pop();
+  return {K,A,C,P,index:idx,level:lv[1],levelText:lv[2],kN,aMax,calN,done,n};
+}
+
+/* ---------------- tutor + voice ---------------- */
+const TUTOR_SVG = `<svg viewBox="0 0 200 200"><defs><clipPath id="cc"><circle cx="100" cy="100" r="100"/></clipPath></defs><g clip-path="url(#cc)"><rect width="200" height="200" fill="var(--accent-soft)"/><path d="M14 205 C22 154 58 138 100 136 C142 138 178 154 186 205 Z" fill="#24364A"/><path d="M84 137 L100 168 L116 137 Z" fill="#EEF4F4"/><path d="M80 140 C70 166 80 182 94 184" fill="none" stroke="#9AA9AF" stroke-width="3.2" stroke-linecap="round"/><path d="M120 140 C130 166 120 182 106 184" fill="none" stroke="#9AA9AF" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="188" r="6" fill="#B8C4C8" stroke="#7F8E94" stroke-width="1.5"/><rect x="88" y="110" width="24" height="32" rx="9" fill="#A9714E"/><g class="tHead"><ellipse cx="70" cy="92" rx="5" ry="8" fill="#B87C58"/><ellipse cx="130" cy="92" rx="5" ry="8" fill="#B87C58"/><ellipse cx="100" cy="88" rx="30" ry="36" fill="#C48A63"/><path d="M66 92 C60 52 84 38 104 40 C128 40 142 58 134 94 C130 76 122 64 102 63 C84 63 72 72 66 92 Z" fill="#2B211C"/><path d="M67 88 C62 108 68 124 76 128 L76 96 Z" fill="#2B211C"/><path d="M133 88 C138 108 132 124 124 128 L124 96 Z" fill="#2B211C"/><path d="M81 76 Q89 72 96 76" fill="none" stroke="#2B211C" stroke-width="2.4" stroke-linecap="round"/><path d="M104 76 Q111 72 119 76" fill="none" stroke="#2B211C" stroke-width="2.4" stroke-linecap="round"/><g class="eyes"><ellipse cx="89" cy="86" rx="3.2" ry="3.6" fill="#1D1714"/><ellipse cx="111" cy="86" rx="3.2" ry="3.6" fill="#1D1714"/></g><circle cx="89" cy="86" r="9" fill="none" stroke="#3B3532" stroke-width="1.5"/><circle cx="111" cy="86" r="9" fill="none" stroke="#3B3532" stroke-width="1.5"/><path d="M98 86 L102 86" stroke="#3B3532" stroke-width="1.5"/><path d="M100 90 Q96 100 101 102" fill="none" stroke="#9C6646" stroke-width="1.8" stroke-linecap="round"/><ellipse class="mouth" cx="100" cy="112" rx="8" ry="1.4" fill="#6E3029"/><path class="smile" d="M92 111 Q100 115 108 111" fill="none" stroke="#6E3029" stroke-width="1.8" stroke-linecap="round"/></g></g></svg>`;
+const T = { el:null, open:0, target:0, speaking:false, hasBoundary:false, nextBlink:performance.now()+2500, blinkT:0 };
+function tick(now){
+  if (T.el && T.el.isConnected){
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (T.speaking && !T.hasBoundary && !reduce) T.target = 0.35 + 0.55*Math.abs(Math.sin(now/95))*(0.6+0.4*Math.sin(now/410));
+    if (!T.speaking) T.target = 0;
+    T.open += (T.target-T.open)*0.35; if (T.hasBoundary) T.target *= 0.86;
+    const o = reduce ? (T.speaking?0.3:0) : T.open;
+    const m = T.el.querySelector('.mouth'), sm = T.el.querySelector('.smile'), ey = T.el.querySelector('.eyes'), hd = T.el.querySelector('.tHead');
+    m.setAttribute('ry',(1.4+o*5.2).toFixed(2)); m.setAttribute('rx',(8-o*1.5).toFixed(2)); sm.style.opacity = o>0.15?0:1;
+    if (now > T.nextBlink){ T.blinkT = now; T.nextBlink = now + 2600 + Math.random()*3200; }
+    const b = now - T.blinkT, sy = b<140 ? Math.abs(1-2*b/140) : 1;
+    ey.setAttribute('transform',`translate(0 ${86*(1-sy)}) scale(1 ${Math.max(0.1,sy)})`);
+    const bob = T.speaking&&!reduce ? Math.sin(now/600)*1.2 : 0, tilt = T.speaking&&!reduce ? Math.sin(now/1300)*1.6 : 0;
+    hd.setAttribute('transform',`translate(0 ${bob.toFixed(2)}) rotate(${tilt.toFixed(2)} 100 120)`);
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+function setSpeaking(v){ T.speaking = v; if (T.el) T.el.classList.toggle('speaking', v); }
+const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+let voices = [], voice = null;
+function pickVoice(){
+  if (!synth) return; voices = synth.getVoices().filter(v=>/^en/i.test(v.lang));
+  const pref = S.plan && S.plan.voice; const sorted = voices.slice().sort((a,b)=>(b.lang==='en-GB')-(a.lang==='en-GB'));
+  voice = pref==='__none' ? null : (sorted.find(v=>v.name===pref) || sorted.find(v=>v.lang==='en-GB') || sorted[0] || null);
+}
+if (synth){ pickVoice(); synth.addEventListener ? synth.addEventListener('voiceschanged', ()=>{ pickVoice(); if (curView && curView.startsWith('l')) refreshVoiceSel && refreshVoiceSel(); }) : (synth.onvoiceschanged = pickVoice); }
+const WPS = 2.55;
+const words = t => t.split(/\s+/).filter(Boolean).length;
+const rate = () => (S.plan && S.plan.rate) || 0.95;
+function sentences(arr){ return arr.flatMap(p => (p.match(/[^.!?]+[.!?]+["'”’]?\s*|[^.!?]+$/g) || [p]).map(x=>x.trim()).filter(Boolean)); }
+
+/* ---------------- navigation ---------------- */
+let curView = 'start';
+function views(){ return ['start', ...CH.lessons.map((_,i)=>'l'+i), 'final', 'progress']; }
+function renderMenu(){
+  const m = $('#menu'); m.innerHTML = '';
+  const add = (v, label, state) => { const b = h('button',{type:'button','aria-current':String(curView===v),onclick:()=>go(v)}, state!==undefined ? h('span',{class:'dot'+(state==='done'?' done':state==='part'?' part':'')}) : null, label); m.append(b); };
+  add('start','Start', S.plan ? 'done' : '');
+  CH.lessons.forEach((l,i)=>{ const st = S.lessons[i]; add('l'+i, `${i+1}. ${l.title}`, st ? (st.done?'done':(st.watched||st.check)?'part':'') : ''); });
+  add('final','Final case test', S.test ? 'done' : '');
+  add('progress','My progress');
+  const cur = m.querySelector('[aria-current="true"]'); if (cur) cur.scrollIntoView({block:'nearest',inline:'center'});
+}
+function renderChip(){ const M = metrics(); $('#idxVal').textContent = M.index; $('#idxLvl').textContent = M.level; }
+$('#idxChip').onclick = () => go('progress');
+let lessonTimer = null, lessonStart = 0;
+function go(v){
+  stopSpeech(); flushTime(); curView = v; const main = $('#main'); main.innerHTML = '';
+  if (v==='start') renderStart(main); else if (v==='final') renderFinal(main); else if (v==='progress') renderProgress(main); else renderLesson(main, +v.slice(1));
+  renderMenu(); renderChip(); window.scrollTo({top:0, behavior:'instant'});
+  try { history.replaceState(null,'','#'+v); } catch(e){}
+  if (v.startsWith('l')) lessonStart = Date.now();
+}
+function flushTime(){ if (curView && curView.startsWith('l') && lessonStart){ const s = Math.round((Date.now()-lessonStart)/1000); if (s>0 && s<3600){ L(+curView.slice(1)).secs += s; S.secs += s; save(); } lessonStart = 0; } }
+addEventListener('visibilitychange', ()=>{ if (document.hidden) flushTime(); else if (curView.startsWith('l')) lessonStart = Date.now(); });
+
+/* ---------------- START: personal plan ---------------- */
+function renderStart(main){
+  const plan = S.plan || {time:10, style:'listen', rate:0.95, voice:null};
+  main.append(h('div',null, h('div',{class:'eyebrow'}, CH.num==='A' ? 'Appendix A' : 'Chapter '+CH.num), h('h2',{style:'font-size:2rem;margin-top:4px'}, CH.title), h('p',{class:'lede',style:'margin-top:8px'}, CH.summary)));
+  main.append(h('div',{class:'card'}, h('h3',null,'What you will be able to do'), h('ul',{style:'margin:0;padding-left:20px'}, CH.outcomes.map(o=>h('li',null,o)))));
+  const ans = (S.starter && S.starter.answers) ? S.starter.answers.slice() : CH.starter.map(()=>null);
+  const sq = h('div',{style:'display:flex;flex-direction:column;gap:14px'});
+  CH.starter.forEach((q,i)=>{ const box = h('div',null, h('p',{class:'q'}, `${i+1}. ${q.q}`)); const opts = h('div',{class:'opts'});
+    q.o.forEach((o,j)=>{ const b = h('button',{class:'opt',type:'button','aria-pressed':String(ans[i]===j)}, o); if (ans[i]===j) b.style.borderColor='var(--accent)';
+      b.onclick = () => { ans[i]=j; opts.querySelectorAll('.opt').forEach(x=>{x.style.borderColor='';}); b.style.borderColor='var(--accent)'; }; opts.append(b); });
+    box.append(opts); sq.append(box); });
+  main.append(h('div',{class:'card'}, h('h3',null,'1. Where are you starting from?'), h('p',{class:'lede',style:'margin-bottom:12px'},'Three quick questions. There is no pass mark: your answers just set the right pace for you.'), sq));
+  const tSel = seg([[5,'5 minutes'],[10,'10 minutes'],[20,'20 minutes or more']], plan.time, v=>plan.time=v, 'Time per session');
+  const stSel = seg([['listen','Listen and watch'],['read','Read at my own pace']], plan.style, v=>plan.style=v, 'Learning style');
+  const rSel = seg([[0.8,'Slower'],[0.95,'Normal'],[1.15,'Faster']], plan.rate, v=>plan.rate=v, 'Speaking speed');
+  main.append(h('div',{class:'card'}, h('h3',null,'2. How do you like to learn?'),
+    h('div',{class:'plan',style:'gap:12px'}, h('div',null,h('b',null,'Time per sitting'),tSel), h('div',null,h('b',null,'Style'),stSel), h('div',null,h('b',null,'Speaking speed'),rSel))));
+  const out = h('div');
+  const btn = h('button',{class:'btn primary',type:'button'},'Make my plan');
+  btn.onclick = () => {
+    const score = CH.starter.reduce((a,q,i)=>a+(ans[i]===q.a?1:0),0);
+    S.starter = {answers:ans, score}; S.plan = Object.assign(plan, {path: score>=2 ? 'fast' : 'steady'}); save(); showPlan(out);
+  };
+  main.append(h('div',{class:'card'}, h('h3',null,'3. Your plan'), h('div',{class:'row',style:'margin-bottom:10px'}, btn), out));
+  if (S.plan) showPlan(out);
+}
+function showPlan(out){
+  const p = S.plan, n = CH.lessons.length; out.innerHTML = '';
+  const per = Math.max(1, Math.floor(p.time / ((p.style==='read'?1.5:2.2) + 2)));
+  const sessions = []; for (let i=0;i<n;i+=per) sessions.push([i, Math.min(n,i+per)-1]);
+  const pathTxt = p.path==='fast' ? 'Fast track. You already know some of this, so each lesson lets you skip straight to the check and case. The plain-words summaries stay folded unless you need them.' : 'Step by step. Each lesson shows a plain-words summary after Sam explains it, and gives you a second try if a question trips you up.';
+  out.append(h('div',{class:'plan'},
+    h('div',null,h('b',null,'Your path'), h('span',null, h('span',{class:'pill acc'}, p.path==='fast'?'Fast track':'Step by step'),' ', pathTxt)),
+    h('div',null,h('b',null,'Starter score'), h('span',null, `${S.starter.score} of ${CH.starter.length}`)),
+    h('div',null,h('b',null,'Sessions'), h('span',null, `${sessions.length} sittings of about ${p.time} minutes, then the final case test.`))),
+    h('div',{class:'advice',style:'margin-top:10px'}, sessions.map((s,k)=>h('div',null, h('b',{style:'min-width:80px'},'Sitting '+(k+1)), h('span',null, s[0]===s[1] ? `Lesson ${s[0]+1}: ${CH.lessons[s[0]].title}` : `Lessons ${s[0]+1}–${s[1]+1}: ${CH.lessons[s[0]].title} to ${CH.lessons[s[1]].title}`)))),
+    h('div',{class:'row',style:'margin-top:12px'}, h('button',{class:'btn primary',type:'button',onclick:()=>go('l'+firstUnfinished())}, firstUnfinished()===0 && !S.lessons[0] ? 'Start lesson 1' : 'Continue: lesson '+(firstUnfinished()+1)), h('span',{class:'lede',style:'font-size:.88rem'},'You can change any of this later. Your progress is saved in this browser only.')));
+}
+function firstUnfinished(){ for (let i=0;i<CH.lessons.length;i++) if (!(S.lessons[i]&&S.lessons[i].done)) return i; return CH.lessons.length-1; }
+
+/* ---------------- LESSON ---------------- */
+let player = null, refreshVoiceSel = null;
+function stopSpeech(){ if (player){ player.stop(); } }
+function renderLesson(main, i){
+  const les = CH.lessons[i], st = L(i), plan = S.plan || {path:'steady', style:'listen'};
+  if (!S.plan) main.append(h('div',{class:'card',style:'background:var(--info-soft)'}, h('p',null,'Tip: set your pace and style on the ', h('a',{href:'#start',onclick:e=>{e.preventDefault();go('start');}},'Start'),' page first. It takes a minute.')));
+  const stepsEl = h('div',{class:'steps'});
+  function renderSteps(){ stepsEl.innerHTML=''; [['Watch',st.watched],['Check',!!st.check],['Case',st.caseDone]].forEach(([t,ok],k)=>stepsEl.append(h('span',{class: ok?'ok':''}, (ok?'✓ ':(k+1)+'. ')+t))); }
+  renderSteps();
+  main.append(h('div',null, h('div',{class:'eyebrow'}, `Lesson ${i+1} of ${CH.lessons.length} · about ${les.minutes||2} minutes`), h('h2',{style:'font-size:1.8rem;margin:4px 0 8px'}, les.title), stepsEl));
+
+  // --- WATCH
+  const slides = les.slides; const sents = slides.map(s=>sentences(s.say));
+  let si = 0, ui = 0, playing = false, token = 0, timers = [], mode = plan.style === 'read' ? 'read' : 'listen';
+  const img = h('img',{alt:''}); const tag = h('span',{class:'slidetag'}); const big = h('button',{class:'bigplay',type:'button'}, h('span',{class:'c'}, h('span',{html:'<svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="#fff"/></svg>'})), h('span',null,'Play lesson'));
+  const stage = h('div',{class:'stage'}, img, tag, big);
+  const tutorEl = h('div',{class:'tutor','aria-hidden':'true',html:TUTOR_SVG}); T.el = tutorEl;
+  const cap = h('div',{class:'cap','aria-live':'polite'});
+  const readBox = h('div',{class:'read'});
+  const speakRow = h('div',{class:'speaker'}, h('div',{class:'tutor-wrap'}, tutorEl, h('span',null,'Sam, your tutor')), cap);
+  const playBtn = h('button',{class:'btn primary',type:'button'},'Play');
+  const prevBtn = h('button',{class:'btn',type:'button'},'◀ Back'), nextBtn = h('button',{class:'btn',type:'button'},'Next ▶');
+  const voiceSel = h('select',{id:'voiceSel','aria-label':'Voice'});
+  refreshVoiceSel = () => { voiceSel.innerHTML=''; voiceSel.append(h('option',{value:'__none'},'No voice: captions only')); voices.slice().sort((a,b)=>(b.lang==='en-GB')-(a.lang==='en-GB')).forEach(v=>voiceSel.append(h('option',{value:v.name},`${v.name} (${v.lang})`))); voiceSel.value = voice ? voice.name : '__none'; };
+  refreshVoiceSel();
+  voiceSel.onchange = () => { S.plan = S.plan || {path:'steady',style:'listen',time:10,rate:0.95}; S.plan.voice = voiceSel.value; save(); pickVoice(); if (playing){ stop(); play(); } };
+  const rateSel = seg([[0.8,'Slower'],[0.95,'Normal'],[1.15,'Faster']], rate(), v=>{ S.plan = S.plan || {path:'steady',style:'listen',time:10}; S.plan.rate = v; save(); if (playing){ stop(); play(); } }, 'Speed');
+  const modeSel = seg([['listen','Listen'],['read','Read']], mode, v=>{ stop(); mode = v; layout(); }, 'Mode');
+  const plainBtn = h('button',{class:'btn small',type:'button'},'Explain more simply');
+  const ctrls = h('div',{class:'ctrls'}, prevBtn, playBtn, nextBtn, h('span',{class:'grow'}), modeSel, rateSel, h('label',null,'Voice', voiceSel));
+  const plainCard = h('div',{class:'plain',hidden:true}, h('b',null,'In plain words'), h('ul',null, les.plain.map(p=>h('li',null,p))));
+  const keyCard = h('div',{class:'key',hidden:!st.watched}, h('b',{class:'k'},'Key point'), h('p',null, les.keyPoint));
+  const skipBtn = h('button',{class:'btn small',type:'button',onclick:()=>{ stop(); markWatched(); checkCard.scrollIntoView({behavior:'smooth'}); }}, 'I know this: skip to the check');
+  plainBtn.onclick = () => { plainCard.hidden = !plainCard.hidden; plainBtn.textContent = plainCard.hidden ? 'Explain more simply' : 'Hide plain words'; };
+  const watchCard = h('div',{class:'card'}, stage, speakRow, readBox, ctrls, h('div',{class:'row',style:'margin-top:10px'}, plainBtn, plan.path==='fast' ? skipBtn : null), h('div',{style:'margin-top:10px'}, plainCard));
+  main.append(watchCard, keyCard);
+  function layout(){ speakRow.hidden = mode!=='listen'; readBox.hidden = mode!=='read'; playBtn.hidden = mode!=='listen'; big.hidden = mode!=='listen' || playing; rateSel.hidden = mode!=='listen'; voiceSel.parentNode.hidden = mode!=='listen'; showSlide(); }
+  function showSlide(){
+    img.src = `slides/s-${pad(slides[si].img)}.jpg`; img.alt = `Slide for ${les.title}`; tag.textContent = `${si+1} / ${slides.length}`;
+    prevBtn.disabled = si===0; nextBtn.textContent = si===slides.length-1 ? (mode==='read' ? 'Finish reading ✓' : 'Next ▶') : 'Next ▶';
+    nextBtn.disabled = mode==='listen' && si===slides.length-1;
+    if (mode==='read'){ readBox.innerHTML=''; slides[si].say.forEach(p=>readBox.append(h('p',null,p))); }
+    else caption(-1);
+  }
+  function caption(ci){ cap.innerHTML=''; const t = sents[si][ui]||''; let pos=0; t.split(/(\s+)/).forEach(part=>{ if(!part.trim()){cap.append(part);pos+=part.length;return;} const s0=pos,e0=pos+part.length; pos=e0; cap.append(h('span',{class: ci<0?'w':(ci>=e0?'w past':ci>=s0?'w now':'w')},part)); }); }
+  function clear(){ timers.forEach(clearTimeout); timers=[]; }
+  function stop(){ playing=false; token++; clear(); if (synth) synth.cancel(); setSpeaking(false); playBtn.textContent='Play'; }
+  function play(){ if (playing) return; playing = true; big.hidden = true; playBtn.textContent='Pause'; speak(); }
+  function speak(){
+    const tok = ++token; clear(); const text = sents[si][ui]; caption(-1);
+    const est = words(text)/(WPS*rate())*1000; const done = () => { if (tok!==token) return; setSpeaking(false); advance(); };
+    if (synth && voice){
+      const u = new SpeechSynthesisUtterance(text); u.voice = voice; u.lang = voice.lang; u.rate = rate(); T.hasBoundary = false;
+      u.onstart = () => { if (tok===token) setSpeaking(true); };
+      u.onboundary = e => { if (tok!==token || e.name==='sentence') return; T.hasBoundary = true; T.target = 0.55+Math.random()*0.45; caption(e.charIndex); };
+      u.onend = done; u.onerror = e => { if (tok!==token || e.error==='interrupted' || e.error==='canceled') return; silent(tok,text,est); };
+      synth.speak(u);
+      timers.push(setTimeout(()=>{ if (tok===token && !T.speaking && !synth.speaking) silent(tok,text,est); }, 2500));
+      timers.push(setTimeout(done, est*2.2+4000));
+    } else silent(tok,text,est);
+  }
+  function silent(tok,text,est){ if (tok!==token) return; clear(); T.hasBoundary=false; setSpeaking(true);
+    const starts=[]; let pos=0; text.split(/(\s+)/).forEach(p=>{ if(p.trim()) starts.push(pos); pos+=p.length; });
+    starts.forEach((c,k)=>timers.push(setTimeout(()=>{ if(tok===token) caption(c); }, est*k/starts.length)));
+    timers.push(setTimeout(()=>{ if(tok!==token) return; setSpeaking(false); advance(); }, est+250)); }
+  function advance(){ if (!playing) return; ui++;
+    if (ui >= sents[si].length){ if (si >= slides.length-1){ stop(); markWatched(); return; } si++; ui=0; showSlide(); const tok=token; timers.push(setTimeout(()=>{ if(playing&&tok===token) speak(); }, 900)); return; }
+    speak(); }
+  function markWatched(){ if (!st.watched){ st.watched = true; save(); renderSteps(); } keyCard.hidden = false; if (plan.path!=='fast') { plainCard.hidden = false; plainBtn.textContent='Hide plain words'; } cap.innerHTML = '<b>End of the lesson.</b> Now try the quick check below.'; }
+  playBtn.onclick = () => playing ? stop() : play(); big.onclick = play;
+  prevBtn.onclick = () => { const was = playing; stop(); si = Math.max(0, si-1); ui=0; showSlide(); if (was) play(); };
+  nextBtn.onclick = () => { if (mode==='read' && si===slides.length-1){ markWatched(); checkCard.scrollIntoView({behavior:'smooth'}); return; } const was = playing; stop(); si = Math.min(slides.length-1, si+1); ui=0; showSlide(); if (was) play(); };
+  player = {stop};
+
+  // --- CHECK (with confidence and adaptive second chance)
+  const checkCard = h('div',{class:'card'}); main.append(checkCard);
+  function renderCheck(){
+    checkCard.innerHTML=''; checkCard.append(h('div',{class:'eyebrow'},'Quick check'));
+    const c = les.check;
+    if (st.check){ // already answered: show summary + allow retry practice
+      checkCard.append(h('p',{class:'q'}, c.q), h('p',{class:'fb'}, st.check.ok ? h('span',{class:'pill good'},'Right first time') : h('span',{class:'pill warn'},'Missed first time'), ' ', c.e),
+        st.retry ? h('p',{class:'fb'}, 'Second chance: ', st.retry.ok ? h('span',{class:'pill good'},'right') : h('span',{class:'pill bad'},'missed')) : null,
+        h('div',{class:'row',style:'margin-top:8px'}, h('button',{class:'btn small',type:'button',onclick:()=>{ askQuestion(checkCard, c, true, ()=>{}); }},'Practise again (not scored)')));
+      return;
+    }
+    askQuestion(checkCard, c, false, (ok, conf) => {
+      st.check = {ok, conf}; save(); renderSteps();
+      if (!ok && c.retry){
+        plainCard.hidden = false; plainBtn.textContent='Hide plain words';
+        const r = h('div',{style:'margin-top:14px'}, h('div',{class:'plain'}, h('b',null,'Let\'s look at it another way'), h('ul',null, les.plain.map(p=>h('li',null,p)))));
+        const rq = h('div',{style:'margin-top:12px'}); r.append(h('div',{class:'eyebrow',style:'margin-top:12px'},'Second chance'), rq); checkCard.append(r);
+        askQuestion(rq, c.retry, false, (ok2) => { st.retry = {ok:ok2}; save(); if (!ok2) rq.append(h('p',{class:'fb'}, h('span',{class:'pill warn'},'Tip'),' Try the lesson again in Read mode, at your own pace. It is marked for review on your progress page.')); caseCard.hidden=false; }, true);
+      } else caseCard.hidden = false;
+    });
+  }
+  // --- CASE simulation
+  const caseCard = h('div',{class:'card',hidden: !st.check}); main.append(caseCard);
+  function renderCase(){
+    const sc = les.scenario; caseCard.innerHTML='';
+    caseCard.append(h('div',{class:'eyebrow'},'Case simulation'), h('h3',null, sc.title), h('p',{class:'case-set'}, sc.setting));
+    const maxPts = sc.steps.length*2; let pts = 0, k = 0;
+    const host = h('div'); caseCard.append(host);
+    if (st.caseDone){ host.append(h('p',{class:'fb'}, h('span',{class: st.caseScore>=maxPts*0.75?'pill good':st.caseScore>=maxPts/2?'pill warn':'pill bad'}, `You scored ${st.caseScore} of ${maxPts}`), ' ', h('button',{class:'btn small',type:'button',onclick:()=>{ st.caseDone=false; st.caseScore=0; save(); renderCase(); }},'Try the case again'))); finishRow(); return; }
+    function step(){
+      const s = sc.steps[k]; const box = h('div',{class:'stepbox'}, h('p',{class:'q'}, `${k+1}. ${s.prompt}`)); const opts = h('div',{class:'opts'}); const fb = h('div',{class:'fb'});
+      s.choices.forEach(ch => { const b = h('button',{class:'opt',type:'button'}, ch.t); b.onclick = () => {
+        opts.querySelectorAll('.opt').forEach(x=>x.disabled=true); b.classList.add(ch.s===2?'right':ch.s===1?'part':'wrong');
+        if (ch.s<2){ const best = s.choices.find(c=>c.s===2); if (best) [...opts.children].find(x=>x.textContent===best.t).classList.add('right'); }
+        pts += ch.s; fb.innerHTML = `<b>${ch.s===2?'Good call.':ch.s===1?'Partly.':'Not the best choice.'}</b> ${ch.fb}`;
+        k++; if (k < sc.steps.length) step(); else { st.caseDone = true; st.caseScore = pts; st.caseMax = maxPts; st.done = st.done || !!st.check; save(); renderSteps();
+          host.append(h('p',{class:'fb',style:'margin-top:12px'}, h('span',{class: pts>=maxPts*0.75?'pill good':pts>=maxPts/2?'pill warn':'pill bad'}, `Case score: ${pts} of ${maxPts}`))); finishRow(); } };
+        opts.append(b); });
+      box.append(opts, fb); host.append(box);
+    }
+    step();
+  }
+  function finishRow(){
+    st.done = !!(st.check && st.caseDone); save();
+    const next = i < CH.lessons.length-1 ? h('button',{class:'btn primary',type:'button',onclick:()=>go('l'+(i+1))}, `Next: lesson ${i+2}`) : h('button',{class:'btn primary',type:'button',onclick:()=>go('final')}, 'Go to the final case test');
+    caseCard.append(h('div',{class:'row',style:'margin-top:14px'}, next, h('button',{class:'btn',type:'button',onclick:()=>go('progress')},'See my progress')));
+  }
+  renderCheck(); renderCase(); layout();
+}
+
+/* generic question with confidence rating */
+function askQuestion(host, q, practice, onDone, isRetry){
+  const box = h('div'); host.append(box);
+  if (!isRetry || true) box.append(h('p',{class:'q'}, q.q));
+  let conf = null;
+  const confSeg = seg([['sure','I\'m sure'],['unsure','I\'m not sure']], null, v=>conf=v, 'Confidence');
+  if (!practice) box.append(h('div',{class:'conf'}, h('span',null,'Before you answer, how sure are you?'), confSeg, h('span',{style:'font-size:.8rem'},'(optional, helps your self-awareness score)')));
+  const opts = h('div',{class:'opts'}); const fb = h('div',{class:'fb'});
+  q.o.forEach((o,j)=>{ const b = h('button',{class:'opt',type:'button'}, o); b.onclick = () => {
+    const ok = j===q.a; opts.querySelectorAll('.opt').forEach(x=>x.disabled=true); b.classList.add(ok?'right':'wrong'); if (!ok) opts.children[q.a].classList.add('right');
+    fb.innerHTML = `<b>${ok?'Right.':'Not quite.'}</b> ${q.e}`; onDone(ok, conf); };
+    opts.append(b); });
+  box.append(opts, fb);
+}
+
+/* ---------------- FINAL case test ---------------- */
+function renderFinal(main){
+  const M = metrics();
+  main.append(h('div',null, h('div',{class:'eyebrow'},'Final case test'), h('h2',{style:'font-size:1.8rem;margin-top:4px'},'Check your learning path'), h('p',{class:'lede',style:'margin-top:6px'}, `${CH.test.length} short questions across all ${CH.lessons.length} lessons. You see the answer after each one. Your latest attempt counts towards your learning index, and the results show which lessons to revisit.`)));
+  if (M.done < CH.lessons.length) main.append(h('div',{class:'card',style:'background:var(--signal-soft)'}, h('p',null, `You have finished ${M.done} of ${CH.lessons.length} lessons. You can take the test now, but you will probably score higher after finishing them.`)));
+  const host = h('div',{class:'card'}); main.append(host);
+  if (S.test) { host.append(h('p',null, h('span',{class:'pill acc'}, `Last attempt: ${S.test.score} of ${CH.test.length}`), ` · ${S.test.attempts} attempt${S.test.attempts>1?'s':''}`), h('div',{class:'row',style:'margin-top:10px'}, h('button',{class:'btn primary',type:'button',onclick:()=>{ host.innerHTML=''; runTest(host); }},'Take the test again'), h('button',{class:'btn',type:'button',onclick:()=>go('progress')},'See my results'))); return; }
+  host.append(h('button',{class:'btn primary',type:'button',onclick:()=>{ host.innerHTML=''; runTest(host); }},'Start the test'));
+}
+function runTest(host){
+  const answers = []; let k = 0;
+  const prog = h('p',{class:'eyebrow'}); host.append(prog); const qhost = h('div'); host.append(qhost);
+  function next(){
+    qhost.innerHTML=''; prog.textContent = `Question ${k+1} of ${CH.test.length} · from lesson ${CH.test[k].lesson+1}: ${CH.lessons[CH.test[k].lesson].title}`;
+    askQuestion(qhost, CH.test[k], false, (ok, conf) => { answers.push({ok, conf, lesson: CH.test[k].lesson});
+      qhost.append(h('div',{class:'row',style:'margin-top:12px'}, h('button',{class:'btn primary',type:'button',onclick:()=>{ k++; if (k<CH.test.length) next(); else finish(); }}, k<CH.test.length-1?'Next question':'See my results'))); });
+  }
+  function finish(){ const score = answers.filter(a=>a.ok).length; S.test = {answers, score, attempts:(S.test?S.test.attempts:0)+1, at:Date.now()}; save(); go('progress'); }
+  next();
+}
+
+/* ---------------- PROGRESS: learning index, advice, certificate ---------------- */
+function gaugeSVG(v){
+  const r=60, c=2*Math.PI*r, f=c*v/100;
+  return `<svg viewBox="0 0 150 150" role="img" aria-label="Learning index ${v} out of 100"><circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="14"/><circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--accent)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${f} ${c}" transform="rotate(-90 75 75)"/><text x="75" y="80" text-anchor="middle" font-size="34" font-weight="700" fill="var(--ink)" font-family="JetBrains Mono, monospace">${v}</text><text x="75" y="102" text-anchor="middle" font-size="11" fill="var(--muted)">out of 100</text></svg>`;
+}
+function advice(){
+  const out = []; const n = CH.lessons.length;
+  const testBy = {}; if (S.test) S.test.answers.forEach(a=>{ (testBy[a.lesson] = testBy[a.lesson]||{ok:0,n:0}); testBy[a.lesson].n++; if (a.ok) testBy[a.lesson].ok++; });
+  const weak = [];
+  for (let i=0;i<n;i++){ const l = S.lessons[i]; const reasons = [];
+    if (l && l.check && !l.check.ok) reasons.push('missed the quick check');
+    if (l && l.caseDone && l.caseScore < l.caseMax*0.5) reasons.push(`scored ${l.caseScore} of ${l.caseMax} on the case`);
+    if (testBy[i] && testBy[i].ok < testBy[i].n) reasons.push(`${testBy[i].n-testBy[i].ok} final-test question${testBy[i].n-testBy[i].ok>1?'s':''} wrong`);
+    if (reasons.length) weak.push([i, reasons]); }
+  weak.sort((a,b)=>b[1].length-a[1].length).slice(0,3).forEach(([i,r])=>out.push(['Revisit', `Lesson ${i+1}, ${CH.lessons[i].title}: you ${r.join(', ')}. Try it in Read mode and open "Explain more simply".`, 'l'+i]));
+  const nf = [...Array(n).keys()].find(i=>!(S.lessons[i]&&S.lessons[i].done));
+  if (nf!==undefined) out.push(['Next', `Carry on with lesson ${nf+1}, ${CH.lessons[nf].title}.`, 'l'+nf]);
+  else if (!S.test) out.push(['Next', 'All lessons done. Take the final case test to check your learning path.', 'final']);
+  const M = metrics();
+  if (M.calN >= 4 && M.C < 0.6) out.push(['Self-awareness', 'Your confidence often did not match your answers. In clinical work, knowing when you are unsure matters as much as knowing the answer. Keep rating your confidence.', null]);
+  if (S.plan && S.secs > 0){ const done = Object.values(S.lessons).filter(l=>l.done); const avg = done.length ? done.reduce((a,l)=>a+l.secs,0)/done.length/60 : 0;
+    if (avg >= 0.5) out.push(['Your pace', `You spend about ${avg.toFixed(1)} minutes per lesson. ${avg > 6 ? 'Taking your time is fine. Shorter sittings may suit you better: try 5-minute sittings on the Start page.' : avg < 2.5 ? 'You move quickly. If the cases feel easy, the Fast track path lets you skip straight to them.' : 'That fits your plan well.'}`, null]); }
+  if (!out.length) out.push(['Well done', 'No gaps found. You could teach this chapter to a colleague.', null]);
+  return out;
+}
+function renderProgress(main){
+  const M = metrics();
+  main.append(h('div',null, h('div',{class:'eyebrow'},'My progress'), h('h2',{style:'font-size:1.8rem;margin-top:4px'},'Your learning index'), h('p',{class:'lede',style:'margin-top:6px'}, S.test ? 'Based on your lessons, cases and final test.' : 'Provisional until you take the final case test.')));
+  const dims = [['Knowledge', M.K, 'Quick checks right first time, plus final-test answers'], ['Applying it', M.A, 'Points from the case simulations'], ['Self-awareness', M.C, 'How often your confidence matched your answer'], ['Completion', M.P, 'Lessons finished and final test taken']];
+  const dimsEl = h('div',{class:'dims'}, dims.map(([n,v,d])=>h('div',null, h('div',{class:'dim'}, h('span',null,n), h('div',{class:'track'}, h('div',{class:'fill',style:`width:${v==null?0:pct(v)}%`})), h('output',null, v==null?'—':pct(v)+'%')), h('div',{style:'font-size:.78rem;color:var(--muted);margin:-4px 0 0'}, d))));
+  const ladder = h('div',{class:'ladder'}, LEVELS.map(l=>h('div',{class: l[1]===M.level?'on':''}, l[1], h('br'), `${l[0]}+`)));
+  main.append(h('div',{class:'card'}, h('div',{class:'gauge'}, h('div',{html:gaugeSVG(M.index)}), h('div',{style:'flex:1;min-width:240px'}, h('h3',null, M.level), h('p',{class:'lede'}, M.levelText), ladder)), h('div',{style:'margin-top:16px'}, dimsEl),
+    h('p',{class:'foot',style:'margin-top:12px'},'How it is worked out: knowledge 35%, applying it 35%, self-awareness 15%, completion 15%. Levels follow Benner\'s "novice to expert" stages used in clinical education.')));
+  const adv = h('div',{class:'advice'}, advice().map(([t,txt,v])=>h('div',null, h('span',{class:'pill acc',style:'flex:none'},t), h('span',{style:'flex:1'},txt), v ? h('button',{class:'btn small',type:'button',onclick:()=>go(v)},'Go') : null)));
+  main.append(h('div',{class:'card'}, h('h3',null,'What to do next'), adv));
+  const rows = CH.lessons.map((les,i)=>{ const l = S.lessons[i]||{}; return h('tr',null, h('td',null, `${i+1}. ${les.title}`), h('td',null, l.watched?'✓':'—'), h('td',null, l.check ? (l.check.ok ? h('span',{class:'pill good'},'Right') : h('span',{class:'pill warn'},'Missed')) : '—'), h('td',null, l.caseDone ? `${l.caseScore}/${l.caseMax}` : '—'), h('td',{class:'mono'}, l.secs ? (l.secs<60 ? '<1 min' : Math.round(l.secs/60)+' min') : '—')); });
+  main.append(h('div',{class:'card'}, h('h3',null,'Lesson by lesson'), h('div',{class:'tablewrap'}, h('table',{class:'t'}, h('thead',null,h('tr',null, ['Lesson','Watched','Check','Case','Time'].map(t=>h('th',null,t)))), h('tbody',null,rows))),
+    S.test ? h('p',{style:'margin-top:10px'}, h('span',{class:'pill acc'}, `Final test: ${S.test.score} of ${CH.test.length}`)) : null));
+  // certificate
+  const nameIn = h('input',{type:'text',id:'certName',placeholder:'Your name as it should appear',value:S.name||''});
+  const certBtn = h('button',{class:'btn primary',type:'button'},'Download certificate');
+  const note = h('p',{class:'foot'});
+  const eligible = S.test && M.index >= 60;
+  certBtn.disabled = !eligible; note.textContent = eligible ? 'Saves a picture of your certificate. Your score is calculated in your own browser, so keep the file as your record.' : 'Available once you have taken the final case test and reached Competent (60 or more).';
+  certBtn.onclick = () => { S.name = nameIn.value.trim(); save(); makeCert(S.name || 'Learner', M); };
+  main.append(h('div',{class:'card'}, h('h3',null,'Certificate'), h('div',{class:'row'}, nameIn, certBtn), note,
+    h('div',{class:'row',style:'margin-top:14px'}, h('button',{class:'btn small',type:'button',onclick:()=>{ resetBox.hidden = false; }},'Start this chapter again'))));
+  const resetBox = h('div',{class:'card',hidden:true,style:'background:var(--bad-soft)'}, h('p',null,'This clears your plan, answers and scores for this chapter in this browser. It cannot be undone.'), h('div',{class:'row',style:'margin-top:10px'}, h('button',{class:'btn',type:'button',onclick:()=>{ S = blank(); save(); go('start'); }},'Yes, clear this chapter'), h('button',{class:'btn',type:'button',onclick:()=>{ resetBox.hidden=true; }},'Keep my progress')));
+  main.append(resetBox);
+}
+function makeCert(name, M){
+  const c = document.createElement('canvas'); c.width = 1600; c.height = 1130; const x = c.getContext('2d');
+  x.fillStyle = '#FFFFFF'; x.fillRect(0,0,1600,1130); x.strokeStyle = '#0E6B66'; x.lineWidth = 14; x.strokeRect(40,40,1520,1050); x.lineWidth = 2; x.strokeRect(70,70,1460,990);
+  x.fillStyle = '#0E6B66'; x.textAlign = 'center'; x.font = '600 30px Georgia, serif'; x.fillText('A CLINICAL GUIDE TO AI IN HEALTHCARE', 800, 180);
+  x.fillStyle = '#14232A'; x.font = '600 72px Georgia, serif'; x.fillText('Certificate of learning', 800, 290);
+  x.font = '28px Arial, sans-serif'; x.fillStyle = '#55686D'; x.fillText('This is to record that', 800, 380);
+  x.fillStyle = '#14232A'; x.font = '600 64px Georgia, serif'; x.fillText(name.slice(0,48), 800, 470);
+  x.font = '28px Arial, sans-serif'; x.fillStyle = '#55686D'; x.fillText('has completed', 800, 550);
+  x.fillStyle = '#14232A'; x.font = '600 40px Georgia, serif'; x.fillText((CH.num==='A'?'Appendix A: ':'Chapter '+CH.num+': ') + CH.title, 800, 620, 1400);
+  x.fillStyle = '#0E6B66'; x.font = '600 46px Arial, sans-serif'; x.fillText(`Learning index ${M.index} / 100  ·  ${M.level}`, 800, 740);
+  x.fillStyle = '#55686D'; x.font = '24px Arial, sans-serif';
+  x.fillText(`Knowledge ${pct(M.K)}%   ·   Applying it ${pct(M.A)}%   ·   Self-awareness ${M.C==null?'—':pct(M.C)+'%'}   ·   Final test ${S.test.score}/${CH.test.length}`, 800, 800);
+  x.fillText('Issued ' + new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) + '  ·  Self-assessed online course record, calculated in the learner\'s browser', 800, 980);
+  c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `certificate-${CH.id}.png`; document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000); });
+}
+
+/* ---------------- boot ---------------- */
+$('#chNum').textContent = CH.num==='A' ? 'Appendix A' : 'Chapter '+CH.num;
+$('#chTitle span').textContent = CH.title;
+const hv = (location.hash||'').slice(1);
+go(views().includes(hv) ? hv : (S.plan ? 'l'+firstUnfinished() : 'start'));
+</script>
+
+</body>
+</html>
