@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chapter 3 · Data, Validation, and Evidence</title>
+<meta name="description" content="How to judge any clinical AI claim by asking where its data came from, how it was tested, and which number matters at the bedside.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky top bar (course link, chapter, live Learning Index) + sticky top menu of lessons.
+   Each lesson = Watch (slide, Sam, captions) -> Key point -> Quick check with confidence -> Case simulation.
+   Start tab sets the personal plan; Final tab is the chapter case test; Progress tab shows the index and advice. */
+:root{
+  --bg:#F3F6F6; --surface:#FFFFFF; --surface-2:#E9EFEF; --ink:#14232A; --muted:#55686D; --line:#D2DCDD;
+  --accent:#0E6B66; --accent-soft:#D6ECEA; --signal:#B97A06; --signal-soft:#F7EBD2;
+  --good:#2C7A4B; --good-soft:#DCEFE3; --bad:#AE3434; --bad-soft:#F6DEDE; --info:#2D5B8A; --info-soft:#DDE8F4;
+  --f-display:"Newsreader", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --info:#7FA9D8; --info-soft:#1B2A3B; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17;
+  --good:#5CBB84; --good-soft:#18352A; --bad:#E27474; --bad-soft:#3D1F1F; --info:#7FA9D8; --info-soft:#1B2A3B; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;margin:0}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+button,select,input{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:16px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:12px;padding-block:9px;flex-wrap:wrap}
+.bar .home{font-size:.85rem;font-weight:600;text-decoration:none;white-space:nowrap}
+.bar h1{font-size:1.2rem;flex:1 1 240px;min-width:0}
+.bar h1 small{display:block;font-family:var(--f-body);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.idx{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 12px 4px 6px;cursor:pointer}
+.idx b{font-family:var(--f-mono);font-size:1rem;background:var(--accent);color:var(--surface);border-radius:99px;padding:1px 8px}
+.idx span{font-size:.82rem;color:var(--muted)}
+.menu{display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
+.menu button{flex:none;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;cursor:pointer;font-size:.86rem;white-space:nowrap}
+.menu button[aria-current="true"]{background:var(--accent);color:var(--surface);border-color:var(--accent);font-weight:600}
+.menu .dot{width:9px;height:9px;border-radius:50%;border:1.5px solid currentColor;opacity:.6}
+.menu .dot.done{background:var(--good);border-color:var(--good);opacity:1}
+.menu .dot.part{background:var(--signal);border-color:var(--signal);opacity:1}
+main{padding-block:20px 60px;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.card h3{font-size:1.25rem;margin-bottom:6px}
+.eyebrow{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.lede{color:var(--muted);max-width:68ch}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:.92rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.small{padding:5px 10px;font-size:.84rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer;font-size:.88rem;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface);font-weight:600}
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.steps span{font-size:.8rem;padding:3px 10px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.steps span.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.steps span.ok{background:var(--good-soft);color:var(--good);font-weight:600}
+.stage{position:relative;aspect-ratio:16/9;width:100%;background:#fff;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.slidetag{position:absolute;left:10px;top:10px;background:rgba(10,30,34,.78);color:#fff;font-size:.75rem;padding:3px 9px;border-radius:99px;font-family:var(--f-mono)}
+.bigplay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,20,22,.35);border:0;cursor:pointer;color:#fff;flex-direction:column;gap:8px;font-weight:600}
+.bigplay span.c{width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.speaker{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;margin-top:10px}
+.tutor{width:96px;aspect-ratio:1/1;border-radius:50%;background:var(--accent-soft);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.tutor.speaking{box-shadow:0 0 0 3px var(--accent)}
+.tutor svg{width:100%;height:100%;display:block}
+.tutor-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;color:var(--muted)}
+.cap{min-height:4.4em;background:var(--surface-2);border-radius:8px;padding:10px 14px;font-size:1.06rem}
+.cap .w{color:var(--muted)} .cap .w.past{color:var(--ink)} .cap .w.now{background:var(--signal-soft);color:var(--ink);border-radius:3px;box-shadow:0 0 0 2px var(--signal-soft)}
+.read{background:var(--surface-2);border-radius:8px;padding:12px 16px;display:flex;flex-direction:column;gap:8px;font-size:1.04rem;max-width:75ch}
+.ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.ctrls .grow{flex:1}
+.ctrls select{padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--surface);max-width:210px}
+.ctrls label{font-size:.84rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.key{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:var(--signal-soft);border-radius:10px;padding:12px 16px}
+.key b.k{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--signal);padding-top:3px}
+.key p{font-weight:600;max-width:72ch}
+.plain{background:var(--info-soft);border-radius:10px;padding:12px 16px}
+.plain b{display:block;font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--info);margin-bottom:4px}
+.plain ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.q{font-weight:600;font-size:1.04rem;max-width:72ch;margin-bottom:8px}
+.conf{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.86rem;color:var(--muted);margin-bottom:8px}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 13px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.part{border-color:var(--signal);background:var(--signal-soft)}
+.fb{font-size:.94rem;max-width:72ch;margin-top:8px}
+.case-set{border-left:3px solid var(--accent);padding:4px 0 4px 12px;color:var(--muted);margin-bottom:12px;max-width:75ch}
+.stepbox{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}.tutor{width:72px}}
+.gauge{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.gauge svg{width:150px;height:150px;flex:none}
+.dims{display:flex;flex-direction:column;gap:9px;flex:1;min-width:240px}
+.dim{display:grid;grid-template-columns:minmax(120px,170px) 1fr 48px;gap:10px;align-items:center;font-size:.9rem}
+.dim .track{height:12px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.dim .fill{height:100%;background:var(--accent);border-radius:99px}
+.dim output{font-family:var(--f-mono);text-align:right;font-size:.85rem}
+.ladder{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:12px}
+.ladder div{border-radius:8px;padding:8px;font-size:.8rem;text-align:center;background:var(--surface-2);color:var(--muted)}
+.ladder div.on{background:var(--accent);color:var(--surface);font-weight:700}
+@media (max-width:560px){.ladder{grid-template-columns:repeat(2,minmax(0,1fr))}}
+table.t{width:100%;border-collapse:collapse;font-size:.9rem}
+table.t th,table.t td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+table.t th{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+.pill{display:inline-flex;border-radius:99px;padding:2px 9px;font-size:.78rem;font-weight:600;background:var(--surface-2)}
+.pill.good{background:var(--good-soft);color:var(--good)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.warn{background:var(--signal-soft);color:var(--signal)} .pill.acc{background:var(--accent-soft);color:var(--accent)}
+.advice{display:flex;flex-direction:column;gap:8px}
+.advice div{display:flex;gap:10px;align-items:flex-start;background:var(--surface-2);border-radius:8px;padding:9px 12px}
+.plan{display:flex;flex-direction:column;gap:6px}
+.plan div{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.plan b{min-width:90px}
+.foot{font-size:.8rem;color:var(--muted);max-width:80ch}
+input[type=text]{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);min-width:0;width:260px;max-width:100%}
+@media (max-width:600px){.bar{gap:8px;padding-block:6px}.bar h1{font-size:1rem;flex-basis:150px}.bar h1 small{font-size:.66rem}.idx span{display:none}.bar .home{font-size:.78rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top"><div class="wrap">
+  <div class="bar">
+    <a class="home" href="../index.html">← All chapters</a>
+    <h1 id="chTitle"><small id="chNum"></small><span></span></h1>
+    <button class="idx" id="idxChip" type="button" title="Your learning index for this chapter"><b id="idxVal">0</b><span id="idxLvl">Novice</span></button>
+  </div>
+  <nav class="menu" id="menu" aria-label="Chapter sections"></nav>
+</div></header>
+<main class="wrap" id="main"></main>
+
+<script>
+const CH = {"id": "ch03", "num": "3", "title": "Data, Validation, and Evidence", "summary": "How to judge any clinical AI claim by asking where its data came from, how it was tested, and which number matters at the bedside.", "outcomes": ["Say why an AI tool is only as good as its data and its evidence", "Spot the common faults in clinical data that a headline accuracy figure hides", "Explain why accuracy misleads for rare events, and what to ask instead", "Ask which kind of testing a tool has had, and whether its risks match reality", "Choose the right bedside number for a decision, allowing for how common the condition is"], "starter": [{"q": "A tool for a rare condition says 'no disease' for everyone. Its accuracy is 95 per cent. How useful is it?", "o": ["Very useful, 95 per cent is high", "Useless, it catches no real cases", "Useful only at night"], "a": 1}, {"q": "A supplier says their tool is 'already used in 300 hospitals'. Is that proof it works?", "o": ["Yes, wide use is proof", "No, being in use is not evidence", "Only if the hospitals are in the UK"], "a": 1}, {"q": "A tool was tested only on the same hospital's data it learned from. What does that tell you about how it will do at your hospital?", "o": ["It will work just as well", "Very little, it has not been tested anywhere new", "It will certainly fail"], "a": 1}], "lessons": [{"title": "Two foundations", "minutes": 2, "slides": [{"img": 3, "say": ["Welcome to Chapter 3, Data, Validation, and Evidence. I'm Sam, your tutor.", "This chapter gives you a habit of mind for the whole course. You need no maths.", "Here is the big idea. An AI tool is only as good as two things. The data it learned from, and the evidence that it really works.", "A striking fact shows why. In 2020, researchers reviewed more than two hundred models that predicted COVID-19 outcomes. Almost all were judged unfit for clinical use.", "The maths was not the problem. The data and the testing were weak. So method, not maths, usually decides whether a tool helps a patient.", "The first foundation is data. Clinical data is a by-product of care. Busy people typed it into systems built for billing and booking, not for building models. So it is rich but messy.", "And more data does not fix this. A huge dataset from one unusual hospital simply repeats that hospital's habits more loudly.", "The second foundation is evidence. Testing a tool only on the data it was built from is like marking your own homework.", "Two traps to remember. A tool used in hundreds of hospitals is not proven by that. And regulatory approval is not clinical proof.", "If either foundation is weak, no clever algorithm can rescue the result."]}], "keyPoint": "A clinical AI tool is only as good as the data it learned from and the evidence that it works. Method, not maths, decides.", "plain": ["Two foundations: the data behind the tool, and the proof that it works.", "Clinical data was typed in for billing and booking, so it is messy.", "More data from the wrong place does not fix bias. It makes it louder.", "Being in use, or being approved, is not the same as being proven."], "check": {"q": "Why were most of the 200-plus COVID-19 prediction models judged unfit for use?", "o": ["The data and the testing behind them were weak", "The maths inside them was wrong", "They ran too slowly"], "a": 0, "e": "The review found weak data and weak testing, not bad maths. Method, not mathematics, decided.", "retry": {"q": "A tool learned from a huge dataset from one unusual hospital. What does the size of the data do to any bias in it?", "o": ["Removes it", "Makes it louder", "Has no effect"], "a": 1, "e": "Scale magnifies whatever is in the data, bias included. More data from the wrong place does not help."}}, "scenario": {"title": "The supplier's opening line", "setting": "A supplier presents a deterioration tool to your ward managers. Their first slide says: 'Used in 400 hospitals. CE marked. 94 per cent accurate.'", "steps": [{"prompt": "A colleague says 'four hundred hospitals, that settles it'. What do you say?", "choices": [{"t": "Agree. That many hospitals cannot be wrong", "s": 0, "fb": "Being in use is not evidence. A widely used sepsis tool did far worse when finally tested properly."}, {"t": "Ask what data it learned from and how it was tested", "s": 2, "fb": "Right. Those are the two foundations every claim rests on."}, {"t": "Ask how much it costs", "s": 1, "fb": "Fair to ask, but cost does not tell you whether it works."}]}, {"prompt": "The supplier says the CE mark proves it is clinically effective. Is that right?", "choices": [{"t": "Yes, approval is clinical proof", "s": 0, "fb": "No. Approval is not the same as proof that patients do better."}, {"t": "No, approval is not the same as evidence that patients do better", "s": 2, "fb": "Right. Keep the two questions separate: is it approved, and is it proven?"}, {"t": "Only if the approval is recent", "s": 0, "fb": "The date does not change the point. Approval is not clinical proof."}]}]}}, {"title": "One patient, many systems", "minutes": 2, "slides": [{"img": 4, "say": ["Look at this picture from left to right.", "On the left is one patient. Their data is scattered across the GP system, the hospital record, the lab, the imaging archive, a wearable and a registry.", "Each system uses its own codes, its own patient numbers and its own units.", "In the middle is the fix. Think of it as a set of shared dictionaries, so every system means the same thing by the same word.", "You may hear the names. FHIR moves records between systems. SNOMED names clinical ideas. LOINC codes lab tests. ICD codes diagnoses. DICOM holds images.", "This is not just plumbing. Imagine a sepsis tool trained at a hospital that records lactate in one unit. A second hospital uses a different unit. The tool quietly gets every lactate wrong.", "Mapping both hospitals to the same code and the same unit is what lets the tool move safely.", "On the right is the prize. A clean, labelled, de-identified set of patients who look like the people the tool will serve.", "It is much harder to build than the mountain of raw data suggests. And notice the red dot. Bias can creep in at every arrow along the way."]}], "keyPoint": "One patient's data is scattered across many systems. Shared codes and units let it be joined up safely, but bias can enter at every step.", "plain": ["GP, hospital, lab, imaging, wearables and registries all hold bits of one patient.", "Shared dictionaries, such as SNOMED and LOINC, make them speak the same language.", "A lab unit that differs between hospitals can silently break a tool.", "The clean, representative dataset on the right is the hard part."], "check": {"q": "Two hospitals want to pool lab results, but each uses its own local test codes. Which standard is designed to code lab tests?", "o": ["DICOM", "ICD", "LOINC"], "a": 2, "e": "LOINC codes lab tests. DICOM is for images and ICD is for diagnoses.", "retry": {"q": "Why can a sepsis tool trained at one hospital fail at another?", "o": ["The second hospital may record a lab test in a different unit", "Sepsis is different in different towns", "Computers forget over time"], "a": 0, "e": "If lactate is recorded in a different unit, the tool reads every value wrongly. Shared codes and units fix this."}}, "scenario": {"title": "Sharing a tool across two trusts", "setting": "Your trust wants to adopt a kidney injury alert built by a neighbouring trust. Their lab reports creatinine in different units from yours.", "steps": [{"prompt": "What is the first risk to raise?", "choices": [{"t": "The tool may read your creatinine values wrongly", "s": 2, "fb": "Right. A unit mismatch can silently break every prediction."}, {"t": "The tool will be too slow", "s": 0, "fb": "Speed is not the issue. The units are."}, {"t": "Your patients are a different age mix", "s": 1, "fb": "Worth checking later, but the unit mismatch would break the tool outright."}]}, {"prompt": "The IT lead asks what would fix it. What do you suggest?", "choices": [{"t": "Ask staff to convert the numbers in their heads", "s": 0, "fb": "Unsafe. The tool reads the record directly, not the staff's conversions."}, {"t": "Map both labs to the same code and unit before the tool reads them", "s": 2, "fb": "Right. A shared code and a common unit let the tool move safely."}, {"t": "Switch the alert off for lab results", "s": 0, "fb": "That removes the main signal the tool depends on."}]}]}}, {"title": "Six checks, three quiet faults", "minutes": 3, "slides": [{"img": 5, "say": ["Data quality sounds vague. Here it becomes six questions.", "Completeness. Are the values there? Accuracy. Are they right? A mis-typed weight, or a note copied forward, spreads silently.", "Consistency. Is the same thing recorded the same way? Two units for one lab test is the classic fault.", "Timeliness. Is it up to date? Think of an allergy list that is months old.", "Representativeness. Does the sample look like the people the tool will serve? Provenance. Do we know where each value came from?", "None of these faults shows up in a headline accuracy figure. Run through the six before trusting a dataset."]}, {"img": 6, "say": ["Three of these faults fool people most often.", "First, missing data. In medicine a gap is not neutral. A test is usually ordered because someone was worried. So whether a result exists at all carries meaning. Handled carelessly, that can mislead a tool.", "Second, provenance, the history of each value. If a hospital swaps its lab analyser mid-study, the inputs shift and no error message appears. The fix is to record every change.", "Third, ground truth. That is the answer key the tool learns from. It is often shakier than it looks. A billing code standing in for a diagnosis, or two experts who disagree.", "If the answer key is wrong, even a perfect tool learns the wrong lesson. Ask how the answers were decided."]}], "keyPoint": "Six quality checks: complete, accurate, consistent, timely, representative, and with a known origin. Missing data, origin and the answer key fool people most.", "plain": ["Six checks: are values there, right, recorded the same way, up to date, like your patients, and traceable?", "A missing test often means nobody was worried. The gap itself carries meaning.", "Provenance: the history of each value. A swapped analyser shifts inputs silently.", "Ground truth is the answer key. If it is wrong, the tool learns the wrong lesson."], "check": {"q": "A tool learned its 'answers' from billing codes rather than confirmed diagnoses. What is the risk?", "o": ["The tool will run more slowly", "Billing codes are always more accurate", "The answer key may be wrong, so the tool learns the wrong lesson"], "a": 2, "e": "Ground truth is the answer key. A billing code is a weak stand-in for a diagnosis, so even a perfect tool can learn wrongly.", "retry": {"q": "Why is a missing blood result in a record not just an empty gap?", "o": ["Because the computer deletes old results", "Because tests are usually ordered when someone is worried, so the gap carries meaning", "Because missing results are always errors"], "a": 1, "e": "In medicine, whether a test was done at all tells you something about the patient."}}, "scenario": {"title": "The lab changed its machine", "setting": "You sit on a group reviewing a readmission tool built from three years of trust data. A pathology colleague mentions that the lab replaced its main analyser halfway through that period.", "steps": [{"prompt": "Why does this matter for the tool?", "choices": [{"t": "It does not. A machine is a machine", "s": 0, "fb": "It matters. Results from the two analysers may differ, shifting the tool's inputs silently."}, {"t": "Results may differ between the old and new analyser, without any warning", "s": 2, "fb": "Right. This is a provenance problem. Nothing flags it unless someone recorded the change."}, {"t": "Newer machines are always better, so later data is more trustworthy", "s": 1, "fb": "Perhaps, but the point is the shift between the two periods, which the tool was never told about."}]}, {"prompt": "What do you ask the data team?", "choices": [{"t": "Did you record when the analyser changed, and check the results before and after?", "s": 2, "fb": "Right. Recording every change to the data is the fix for provenance problems."}, {"t": "Can you make the tool run faster?", "s": 0, "fb": "Not relevant to this fault."}, {"t": "Can you add more years of data?", "s": 0, "fb": "More data does not fix a hidden shift. Recording the change does."}]}]}}, {"title": "When accuracy fools you", "minutes": 2, "slides": [{"img": 7, "say": ["Here is the commonest way a bad tool looks good.", "Most clinical events are rare. In this picture, ninety-five in a hundred patients do not have the condition. Five do.", "A lazy tool that says no disease for everyone is right ninety-five times in a hundred. And it catches not a single real case. High accuracy, zero value. This is called the accuracy paradox.", "So for rare events we ask two better questions. Recall: of the patients who truly had it, how many did we catch? Precision: of the alarms we raised, how many were real?", "Let's work the example at the bottom. A ward of a thousand patients. Twenty will deteriorate.", "Tool A flags fifty patients and catches sixteen of the twenty. Its recall is eighty per cent. But its precision is only thirty-two per cent. Two in three of its alarms are false.", "Tool B flags eighteen and catches twelve. Its precision is higher, about two in three. But its recall is sixty per cent. It misses two in five of the patients who deteriorate.", "Which is better? Neither, on its own. It depends on whether a missed patient or a false alarm costs more on your ward.", "And both tools score well over ninety-five per cent accuracy. That one number hides the whole difference."]}], "keyPoint": "For rare events, accuracy misleads. Ask recall, how many real cases were caught, and precision, how many alarms were real.", "plain": ["Rare event plus lazy tool equals high accuracy and no value.", "Recall: of the real cases, how many did it catch?", "Precision: of its alarms, how many were real?", "Choosing between tools depends on whether a miss or a false alarm costs more."], "check": {"q": "On a ward of 1,000, 20 patients deteriorate. A tool flags 50 and catches 16. What is its precision?", "o": ["80 per cent", "96 per cent", "32 per cent"], "a": 2, "e": "Precision is the share of alarms that were real: 16 out of 50 is 32 per cent. Eighty per cent is its recall.", "retry": {"q": "A condition affects 5 in 100 patients. A tool says 'no disease' for everyone. What is its accuracy, and how many cases does it catch?", "o": ["95 per cent, and none", "5 per cent, and all of them", "50 per cent, and half"], "a": 0, "e": "It is right for the 95 who are well and wrong for the 5 who are ill. High accuracy, no cases caught."}}, "scenario": {"title": "Two deterioration tools", "setting": "Your acute medical unit is choosing between two deterioration tools. Tool A catches most deteriorating patients but two in three of its alarms are false. Tool B raises few false alarms but misses two in five deteriorating patients.", "steps": [{"prompt": "The supplier of each says 'over 96 per cent accurate'. What does that tell you?", "choices": [{"t": "They are equally good", "s": 0, "fb": "No. Accuracy hides the whole difference between them when the event is rare."}, {"t": "Almost nothing, because deterioration is rare", "s": 2, "fb": "Right. Both would score high even if they were poor. Look at recall and precision instead."}, {"t": "Tool A is better", "s": 0, "fb": "Accuracy alone cannot tell you that."}]}, {"prompt": "On your unit, a missed deterioration is far more serious than a false alarm, and staff can cope with extra checks. Which tool?", "choices": [{"t": "Tool A, with the higher recall", "s": 2, "fb": "Right. When a miss costs most and the team can absorb false alarms, recall should win."}, {"t": "Tool B, with the higher precision", "s": 1, "fb": "Fewer false alarms, but it misses two in five patients, which you said matters most."}, {"t": "Neither, because neither is perfect", "s": 0, "fb": "No tool is perfect. The choice depends on which error costs more here."}]}]}}, {"title": "Bias is set in the design", "minutes": 2, "slides": [{"img": 8, "say": ["Imbalance is a numbers problem. Bias is different. It is a fairness problem, and it gets in at the design stage. There are four main routes.", "Selection bias is about who is in the data at all. People who never reach care are invisible to it.", "Label bias is about how the outcome was recorded. In a well known case, a tool used healthcare cost as a stand-in for healthcare need. Less had historically been spent on Black patients. So the tool decided they needed less help, and under-served them.", "Spectrum bias happens when the mix of patients in the data differs from your clinic. A referral clinic is not a screening population.", "Historical bias means past unfairness gets baked into future predictions.", "Here is an example. A tool flags patients for extra support. It learned from who received support in the past. If access was unequal, it learns to recommend support for those who already got it. It widens the very gap it was meant to close.", "Notice the fault is in the question the data answered, not in the algorithm. So bias must be checked at design. It cannot be patched on at the end.", "And always ask for results split by age, sex, ethnicity and site, not just one average."]}], "keyPoint": "Bias enters through who is in the data and how the outcome was defined. Check it at design, and ask for results by group.", "plain": ["Selection: who is in the data at all?", "Label: was the outcome a fair stand-in? Cost is not the same as need.", "Spectrum: does the case mix match your clinic?", "Historical: past unfairness repeated as future predictions.", "Ask for results split by age, sex, ethnicity and site."], "check": {"q": "A tool used healthcare cost as a stand-in for need, and under-served Black patients. Which kind of bias is this?", "o": ["Label or measurement bias", "Selection bias", "Spectrum bias"], "a": 0, "e": "The outcome was defined badly. Cost stood in for need, and the two were not the same for every group.", "retry": {"q": "When is the best time to look for bias in an AI tool?", "o": ["After it has gone live", "At the design stage", "Never, bias cannot be found"], "a": 1, "e": "Bias comes from the question the data answered, so it must be examined at design, not patched at the end."}}, "scenario": {"title": "The community support tool", "setting": "Your integrated care board is offered a tool to pick patients for extra community support. It learned from five years of records of who received support in the past.", "steps": [{"prompt": "What is the main worry?", "choices": [{"t": "The tool may just recommend support for groups who already got it", "s": 2, "fb": "Right. If past access was unequal, the tool learns the unfairness and repeats it."}, {"t": "Five years is not enough data", "s": 0, "fb": "The amount is not the issue. The question the data answered is."}, {"t": "The tool may be slow", "s": 0, "fb": "Speed is not the concern here."}]}, {"prompt": "What do you ask the supplier for?", "choices": [{"t": "A faster version", "s": 0, "fb": "Not relevant."}, {"t": "Results split by age, sex, ethnicity and area", "s": 2, "fb": "Right. One average hides who the tool serves badly."}, {"t": "A promise that the algorithm is fair", "s": 1, "fb": "A promise is not evidence. Ask for the results by group."}]}]}}, {"title": "Does it travel, and did it cheat?", "minutes": 3, "slides": [{"img": 9, "say": ["How do we know a tool really works? We test it on harder and harder data. Follow the pipeline from left to right.", "First, internal validation. The team splits its own data and tests on the part it held back. This only catches a tool that memorised its training cases. It cannot show whether the tool travels.", "External validation does. A different time, a different hospital, or a different system. Performance almost always drops here.", "A tool can pass one and fail another. Still accurate next year at the same hospital, yet failing today across the city. So when you hear externally validated, ask: which kind?", "Underneath sits reproducibility. Unless the data, code and settings are written down, nobody can rebuild or check the result."]}, {"img": 11, "say": ["Now the commonest way good results mislead: leakage. Information the tool could not have at the moment of prediction sneaks into its training.", "Three forms. The same patient in both training and test data. Preparing the whole dataset before splitting it. And a clue that secretly holds the answer, like a treatment given only after the diagnosis.", "The defence: split first, by patient, site or time. Do everything else inside the training part only. Trust external testing most.", "If a result looks too good to be true, suspect leakage and ask how the data were divided."]}], "keyPoint": "Internal testing only catches memorising. Ask which kind of external test was done, and if results look too good, suspect leakage.", "plain": ["Internal validation: tested on its own data. Proves little.", "External validation: a new time, a new place or a new system. Ask which.", "Leakage: the answer sneaks into training, so results look brilliant then collapse.", "Too good to be true? Ask how the data were split."], "check": {"q": "A tool still works well on next year's data at the hospital that built it. Your hospital across the city wants it. What should you ask?", "o": ["Has it been tested at a different site, not just a later time?", "Nothing, it is externally validated", "How many layers does it have?"], "a": 0, "e": "Passing a test over time is not the same as passing a test at a new place. Ask which kind of external test was done.", "retry": {"q": "A team reports near-perfect results. The same patients appear in both the training and the test data. What is this?", "o": ["Good practice", "Leakage", "External validation"], "a": 1, "e": "The tool memorised individuals. That is leakage, and the result is not real."}}, "scenario": {"title": "The 99 per cent paper", "setting": "At journal club a registrar presents a paper. A tool predicts a diagnosis with 99 per cent accuracy. One of its inputs is a drug that is only prescribed after that diagnosis is made.", "steps": [{"prompt": "What is your first thought?", "choices": [{"t": "Impressive, we should adopt it", "s": 0, "fb": "Too good to be true usually is. Look at how the result was produced."}, {"t": "That drug gives away the answer, so this is leakage", "s": 2, "fb": "Right. The tool would never have that information at the moment of prediction."}, {"t": "The sample was probably too small", "s": 1, "fb": "Maybe, but the bigger problem is a clue that holds the answer."}]}, {"prompt": "The authors say it was 'validated'. What do you ask?", "choices": [{"t": "Was it tested on data from another time or place, and how were the data split?", "s": 2, "fb": "Right. Internal testing cannot show whether a tool travels, and the split reveals leakage."}, {"t": "Which journal published it?", "s": 0, "fb": "Not a question about evidence."}, {"t": "Was it tested on the same data it learned from?", "s": 1, "fb": "Useful, but you also need to know whether it was tested anywhere new."}]}]}}, {"title": "Do the risks match reality?", "minutes": 2, "slides": [{"img": 10, "say": ["There are two different ways a risk tool can be good.", "Discrimination asks: can it rank sicker patients above less sick ones? That is the area under the curve, the number people love to quote.", "Calibration asks something different. When it says ten per cent risk, does the event really happen to about ten in a hundred such patients?", "On the plot, the dashed diagonal is perfect calibration. Predicted risk equals what happened. The red curve is an over-confident tool. It says high risk, but the real rate is lower, so it sags below the line.", "Why does this matter at the bedside? Suppose a tool says ten per cent, but only three in a hundred patients actually have the event. The ranking may be fine. Yet every risk it quotes is about three times too high.", "A clinician counselling patients on those numbers acts on a false picture, and over-treats.", "The good news. You can recalibrate the tool to your local patients without rebuilding it. It is routine, but easily forgotten when a tool moves between hospitals.", "So never settle for the area under the curve alone. Ask whether the risks match reality."]}], "keyPoint": "Ranking patients well is not the same as getting the risks right. A tool that says ten per cent should be right about ten times in a hundred.", "plain": ["Discrimination: can it put sicker patients above less sick ones?", "Calibration: when it says ten per cent, does it happen ten times in a hundred?", "A tool can rank perfectly and still overstate every risk.", "Recalibrate to local patients when a tool moves. No rebuild needed."], "check": {"q": "A tool predicts 10 per cent risk for a group in which only 3 per cent have the event. What is the problem?", "o": ["Poor discrimination", "Poor calibration, so the risks are overstated", "Leakage"], "a": 1, "e": "The ranking may be fine, but the risks are about three times too high. That is a calibration problem, fixed by recalibrating locally.", "retry": {"q": "A tool says a patient has a 70 per cent risk. If it is well calibrated, what should you expect?", "o": ["About 70 in 100 such patients have the event", "The tool is 70 per cent accurate", "The patient certainly has the event"], "a": 0, "e": "Calibration means the stated risk matches how often the event really happens."}}, "scenario": {"title": "Counselling on a risk score", "setting": "A new surgical risk tool, built in another country, tells patients their risk of a complication. The surgical audit lead notices it quotes 10 per cent for a group where your audit shows 3 per cent.", "steps": [{"prompt": "A consultant says 'but its area under the curve is excellent, so it must be fine'. What is wrong with that?", "choices": [{"t": "Nothing, a high area under the curve means the risks are right", "s": 0, "fb": "No. Ranking well and quoting the right number are different things."}, {"t": "Ranking well does not mean the quoted risks are right", "s": 2, "fb": "Right. Good discrimination with poor calibration still misleads patients."}, {"t": "The area under the curve must have been calculated wrongly", "s": 0, "fb": "No reason to think so. Ranking and calibration are separate."}]}, {"prompt": "What is the practical fix?", "choices": [{"t": "Scrap the tool and build a new one", "s": 0, "fb": "Not needed. The ranking is sound."}, {"t": "Recalibrate it to your own patients", "s": 2, "fb": "Right. Recalibration adjusts the numbers without rebuilding the tool."}, {"t": "Tell patients to divide the number by three", "s": 1, "fb": "Crude and error-prone. Recalibrate the tool properly instead."}]}]}}, {"title": "The ladder of evidence", "minutes": 3, "slides": [{"img": 12, "say": ["Medicine ranks evidence by how well a study controls bias. Clinical AI needs the same discipline. Read the pyramid from the bottom up.", "At the base, testing on past data the team already had. Necessary, but weak. Next, external validation at a new place or time.", "Then a silent trial. The tool runs on real patients in real time, but nobody acts on it yet.", "Above that, a randomised trial. Does using the tool improve what happens to patients? At the top, a review that pools good studies.", "Each rung has its own reporting checklist. TRIPOD plus AI and PROBAST for building and judging a model. DECIDE-AI for early live testing. SPIRIT-AI and CONSORT-AI for trials.", "A supplier's score of nought point nine four means very different things on different rungs. Ask where on the pyramid it sits.", "Most clinical AI never leaves the bottom rungs. One widely used sepsis tool, finally tested externally, did far worse than its reputation."]}, {"img": 15, "say": ["The checklists help a great deal. But a study can tick every box and still describe a biased tool tested only on its own data.", "The checklist makes that visible. You must act on it.", "Use them in order. Name the study design, apply the matching checklist, judge the risk of bias, then check the numbers against the decision. They shape judgement. They do not replace it."]}], "keyPoint": "Ask where a study sits on the evidence ladder. Checklists make weaknesses visible, but you must act on them.", "plain": ["Bottom rung: tested on its own past data. Top rung: trials showing patients do better.", "The same score means different things on different rungs.", "A silent trial runs the tool live without acting on it.", "Checklists like TRIPOD plus AI make flaws visible. They do not remove them."], "check": {"q": "A tool runs silently on live admissions for three months without changing care. Where is this on the evidence ladder?", "o": ["Testing on past data", "A silent, prospective trial", "A randomised trial"], "a": 1, "e": "Running live without acting on it is a silent or shadow trial. It sits above past-data testing but below a randomised trial.", "retry": {"q": "Which study design shows whether using a tool actually improves patient outcomes?", "o": ["Testing on the team's own past data", "External validation", "A randomised trial"], "a": 2, "e": "Only a trial where the tool is used shows whether patients do better, not just whether predictions are accurate."}}, "scenario": {"title": "The board paper", "setting": "A board paper proposes buying a sepsis tool. Its evidence section says: 'Area under the curve 0.94, fully compliant with the TRIPOD plus AI reporting checklist.'", "steps": [{"prompt": "What does the checklist compliance tell you?", "choices": [{"t": "The tool is proven to work", "s": 0, "fb": "No. A checklist makes the study clear to read. It does not make the tool good."}, {"t": "The study is clearly reported, but could still describe a weak tool", "s": 2, "fb": "Right. Compliance is a floor, not a guarantee."}, {"t": "The tool has passed a randomised trial", "s": 0, "fb": "No. TRIPOD plus AI covers model development, not trials."}]}, {"prompt": "What do you ask before the vote?", "choices": [{"t": "Which rung of the ladder does the 0.94 come from?", "s": 2, "fb": "Right. The same number means very different things at different rungs."}, {"t": "Who designed the logo?", "s": 0, "fb": "Not relevant."}, {"t": "Is 0.94 higher than the competitor?", "s": 1, "fb": "Comparing scores is pointless until you know how each was obtained."}]}]}}, {"title": "Four bedside numbers", "minutes": 3, "slides": [{"img": 13, "say": ["Every number here comes from one table: what the tool predicted, against what was true.", "Sensitivity: of the people with the disease, how many did we catch? It matters most when missing a case is dangerous.", "Specificity: of the people without it, how many did we rightly clear? It matters when false alarms are costly.", "Positive predictive value: if the tool flags someone, how likely is it real? That is the bedside question when an alarm fires.", "Negative predictive value: if it clears someone, how safe is that reassurance?"]}, {"img": 14, "say": ["The last two move with how common the condition is. Keep the test fixed at ninety per cent sensitivity and ninety per cent specificity.", "Where one in ten people have the condition, about half the alarms are real. Where one in a hundred have it, more than nine in ten alarms are false.", "The test has not changed. Only the patients have. So a tool proven in a referral clinic can mislead badly in screening. Always ask how common the condition was when that was measured."]}, {"img": 16, "say": ["To finish, six questions for any AI claim. Where did the data come from? Could imbalance or bias distort it? Was it tested where it will be used? Do its risks match reality? How strong is the evidence? Which number matters here?", "A modest tool, well tested for a narrow job and watched in use, beats an ambitious one resting on one past result.", "Well done. Now try the final case test."]}], "keyPoint": "When an alarm fires, ask how likely it is real. That answer depends on how common the condition is where you work.", "plain": ["Sensitivity: of the ill, how many caught? Specificity: of the well, how many cleared?", "Positive predictive value: if flagged, how likely is disease?", "The rarer the condition, the more alarms are false, even with the same test.", "Six questions: data, bias, tested where used, risks match, evidence rung, right number at this prevalence."], "check": {"q": "A screening tool has 90 per cent sensitivity and specificity. Only 1 in 100 people have the disease. Roughly how many alarms are false?", "o": ["About one in ten", "About half", "More than nine in ten"], "a": 2, "e": "At one in a hundred, only about eight in a hundred alarms are real. The rest are false, though the test is unchanged.", "retry": {"q": "An alarm fires on your patient. Which number tells you how likely it is that the patient really has the condition?", "o": ["Positive predictive value", "Sensitivity", "Specificity"], "a": 0, "e": "Positive predictive value answers the bedside question: if flagged, how likely is disease?"}}, "scenario": {"title": "From the clinic to the screening van", "setting": "A heart failure detection tool worked well in a specialist clinic, where three in ten patients had the condition. Your practice wants to use it to screen everyone over 65, where about one in fifty has it.", "steps": [{"prompt": "What will happen to the alarms?", "choices": [{"t": "Most will still be real", "s": 0, "fb": "No. With a rare condition, false alarms outnumber real ones."}, {"t": "Most will be false, even though the tool is unchanged", "s": 2, "fb": "Right. Predictive value falls as the condition gets rarer."}, {"t": "The tool will stop working completely", "s": 0, "fb": "It still works. It just produces far more false alarms."}]}, {"prompt": "What do you ask the supplier?", "choices": [{"t": "What is the accuracy?", "s": 0, "fb": "Accuracy hides the problem."}, {"t": "Of people flagged in a practice like ours, how many really have it?", "s": 2, "fb": "Right. That is positive predictive value at your prevalence."}, {"t": "How quickly does it give a result?", "s": 1, "fb": "Useful later. First find out how many alarms will be false."}]}]}}], "test": [{"q": "A supplier says their tool must be good because 400 hospitals use it. Best response?", "o": ["Ask for the data and the testing behind it, because being in use is not evidence", "Agree, wide use is proof", "Accept it if it is also approved"], "a": 0, "e": "Being in use and being approved are not the same as being proven.", "lesson": 0}, {"q": "A team adds five more years of data from the same unusual hospital to fix bias. What happens?", "o": ["The bias gets louder, not fixed", "The bias disappears", "The tool becomes fair"], "a": 0, "e": "Scale magnifies whatever is in the data, bias included.", "lesson": 0}, {"q": "A tool built at one trust reads a lab value in a unit your trust does not use. What is the risk?", "o": ["Nothing, computers convert units automatically", "It may read every value wrongly without any warning", "It will refuse to run"], "a": 1, "e": "A unit mismatch silently breaks the tool. Shared codes and units fix this.", "lesson": 1}, {"q": "A hospital changed its coding rules halfway through the data used to build a tool, and nobody recorded it. Which quality check has failed?", "o": ["Timeliness", "Completeness", "Provenance"], "a": 2, "e": "Provenance is knowing where each value came from and what changed. An unrecorded change shifts inputs silently.", "lesson": 2}, {"q": "A tool for a condition affecting 5 in 100 patients reports 95 per cent accuracy. What could explain this with no clinical value at all?", "o": ["It may simply say 'no disease' for everyone", "It must be very well calibrated", "It must have been tested externally"], "a": 0, "e": "Predicting the common answer scores high and catches no cases: the accuracy paradox.", "lesson": 3}, {"q": "A tool to pick patients for extra support learned from who got support in the past, when access was unequal. Most likely result?", "o": ["It may widen the existing gap", "It will close the gap", "Its only problem is class imbalance"], "a": 0, "e": "Historical bias in the data is repeated as future predictions.", "lesson": 4}, {"q": "A team fills in missing values across the whole dataset, then splits it into training and test, and reports near-perfect results. Suspect first…", "o": ["Spectrum bias", "Poor timeliness", "Leakage"], "a": 2, "e": "Preparing data before the split lets test information leak into training.", "lesson": 5}, {"q": "A tool was 'externally validated' on next year's data at the same hospital. A neighbouring trust wants it now. What should they ask?", "o": ["Nothing more, it is externally validated", "Was it cross-validated on its own data?", "Was it tested at a different site, not just a later time?"], "a": 2, "e": "A tool can pass a test over time and fail a test at a new place. Ask which kind was done.", "lesson": 5}, {"q": "A tool ranks patients very well but says 20 per cent risk where only 7 in 100 have the event. Main clinical risk?", "o": ["It will rank patients in the wrong order", "Over-treatment driven by wrong risk numbers", "It will run slowly"], "a": 1, "e": "Good ranking with poor calibration means the stated risks are wrong, so patients may be over-treated.", "lesson": 6}, {"q": "A team has run a randomised trial of an AI alert and is writing it up. Which checklist fits?", "o": ["CONSORT-AI", "TRIPOD plus AI", "PROBAST"], "a": 0, "e": "CONSORT-AI covers reports of AI trials. TRIPOD plus AI covers building and validating models.", "lesson": 7}, {"q": "A colleague says any randomised trial outranks any other study. What limit applies to the evidence ladder?", "o": ["It is coarse, so a poorly run trial can outrank a strong study of another kind", "It only applies to imaging tools", "It has been replaced by TRIPOD plus AI"], "a": 0, "e": "The ladder ranks designs, not quality. It shapes judgement but does not replace it.", "lesson": 7}, {"q": "An alarm fires on your patient. You want to know how likely it is that they really have the condition. Which number?", "o": ["Sensitivity", "Specificity", "Positive predictive value"], "a": 2, "e": "Positive predictive value answers: if flagged, how likely is disease?", "lesson": 8}, {"q": "A test with 90 per cent sensitivity and specificity moves from a clinic where 1 in 10 are ill to screening where 1 in 100 are ill. Its positive predictive value…", "o": ["Falls from about half to under one in ten", "Stays the same, the test is unchanged", "Rises, because fewer people are ill"], "a": 0, "e": "Predictive value depends on how common the condition is. Rarer means more false alarms.", "lesson": 8}]};
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids){ const e=document.createElement(tag); if(attrs) for(const [k,v] of Object.entries(attrs)){ if(k==='class') e.className=v; else if(k==='html') e.innerHTML=v; else if(k.startsWith('on')) e.addEventListener(k.slice(2),v); else if(v!==false&&v!=null) e.setAttribute(k,v===true?'':v);} for(const k of kids.flat()) if(k!=null&&k!==false) e.append(k.nodeType?k:document.createTextNode(k)); return e; }
+const pad = n => String(n).padStart(2,'0');
+const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+const pct = x => Math.round(100*x);
+function seg(options, value, onChange, label){ const w = h('div',{class:'seg',role:'group','aria-label':label||''}); const bs = options.map(([v,t]) => { const b = h('button',{type:'button','aria-pressed':String(v===value)}, t); b.onclick = () => { bs.forEach(x=>x.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); onChange(v); }; return b; }); w.append(...bs); return w; }
+
+/* ---------------- learner state ---------------- */
+const KEY = 'cg:' + CH.id;
+const blank = () => ({ v:2, starter:null, plan:null, lessons:{}, test:null, secs:0, updated:0, name:'' });
+let S;
+try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY) || 'null') || {}); } catch(e){ S = blank(); }
+function save(){ S.updated = Date.now(); S.meta = {title:CH.title, num:CH.num, index:metrics().index, level:metrics().level, lessons:CH.lessons.length, done:Object.values(S.lessons).filter(l=>l.done).length, test:!!S.test};
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} renderChip(); renderMenu(); }
+function L(i){ return S.lessons[i] || (S.lessons[i] = {watched:false, check:null, retry:null, caseScore:0, caseMax:0, caseDone:false, done:false, secs:0}); }
+
+/* ---------------- metrics (Learning Index) ----------------
+   Knowledge 35%: first-attempt quick checks + latest final-test answers correct
+   Application 35%: points earned in case simulations (each choice 0–2)
+   Self-awareness 15%: how often your confidence matched your answer (sure & right, or unsure & wrong)
+   Completion 15%: lessons completed + final test taken
+   Levels follow Benner's novice-to-expert stages (shortened for a short course). */
+const LEVELS = [[0,'Novice','Starting out: knows the words, needs support to apply them'],[40,'Advanced beginner','Recognises the main ideas in familiar cases'],[60,'Competent','Applies the ideas to new cases and asks the right questions'],[80,'Proficient','Judges tools confidently and explains why to colleagues']];
+function metrics(){
+  const n = CH.lessons.length; let kOk=0,kN=0,aPts=0,aMax=0,cal=0,calN=0,done=0;
+  for (let i=0;i<n;i++){ const l = S.lessons[i]; if (!l) continue;
+    if (l.check){ kN++; if (l.check.ok) kOk++; if (l.check.conf){ calN++; if ((l.check.conf==='sure')===l.check.ok) cal++; } }
+    aPts += l.caseScore||0; aMax += l.caseDone ? (l.caseMax||0) : 0; if (l.done) done++; }
+  if (S.test){ S.test.answers.forEach(a=>{ kN++; if (a.ok) kOk++; if (a.conf){ calN++; if ((a.conf==='sure')===a.ok) cal++; } }); }
+  const K = kN? kOk/kN : 0, A = aMax? aPts/aMax : 0, C = calN? cal/calN : null, P = (done + (S.test?1:0))/(n+1);
+  const parts = [[K,.35],[A,.35],[P,.15]]; if (C!=null) parts.push([C,.15]);
+  const wsum = parts.reduce((x,p)=>x+p[1],0); const idx = Math.round(100*parts.reduce((x,p)=>x+p[0]*p[1],0)/wsum);
+  const lv = LEVELS.filter(l=>idx>=l[0]).pop();
+  return {K,A,C,P,index:idx,level:lv[1],levelText:lv[2],kN,aMax,calN,done,n};
+}
+
+/* ---------------- tutor + voice ---------------- */
+const TUTOR_SVG = `<svg viewBox="0 0 200 200"><defs><clipPath id="cc"><circle cx="100" cy="100" r="100"/></clipPath></defs><g clip-path="url(#cc)"><rect width="200" height="200" fill="var(--accent-soft)"/><path d="M14 205 C22 154 58 138 100 136 C142 138 178 154 186 205 Z" fill="#24364A"/><path d="M84 137 L100 168 L116 137 Z" fill="#EEF4F4"/><path d="M80 140 C70 166 80 182 94 184" fill="none" stroke="#9AA9AF" stroke-width="3.2" stroke-linecap="round"/><path d="M120 140 C130 166 120 182 106 184" fill="none" stroke="#9AA9AF" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="188" r="6" fill="#B8C4C8" stroke="#7F8E94" stroke-width="1.5"/><rect x="88" y="110" width="24" height="32" rx="9" fill="#A9714E"/><g class="tHead"><ellipse cx="70" cy="92" rx="5" ry="8" fill="#B87C58"/><ellipse cx="130" cy="92" rx="5" ry="8" fill="#B87C58"/><ellipse cx="100" cy="88" rx="30" ry="36" fill="#C48A63"/><path d="M66 92 C60 52 84 38 104 40 C128 40 142 58 134 94 C130 76 122 64 102 63 C84 63 72 72 66 92 Z" fill="#2B211C"/><path d="M67 88 C62 108 68 124 76 128 L76 96 Z" fill="#2B211C"/><path d="M133 88 C138 108 132 124 124 128 L124 96 Z" fill="#2B211C"/><path d="M81 76 Q89 72 96 76" fill="none" stroke="#2B211C" stroke-width="2.4" stroke-linecap="round"/><path d="M104 76 Q111 72 119 76" fill="none" stroke="#2B211C" stroke-width="2.4" stroke-linecap="round"/><g class="eyes"><ellipse cx="89" cy="86" rx="3.2" ry="3.6" fill="#1D1714"/><ellipse cx="111" cy="86" rx="3.2" ry="3.6" fill="#1D1714"/></g><circle cx="89" cy="86" r="9" fill="none" stroke="#3B3532" stroke-width="1.5"/><circle cx="111" cy="86" r="9" fill="none" stroke="#3B3532" stroke-width="1.5"/><path d="M98 86 L102 86" stroke="#3B3532" stroke-width="1.5"/><path d="M100 90 Q96 100 101 102" fill="none" stroke="#9C6646" stroke-width="1.8" stroke-linecap="round"/><ellipse class="mouth" cx="100" cy="112" rx="8" ry="1.4" fill="#6E3029"/><path class="smile" d="M92 111 Q100 115 108 111" fill="none" stroke="#6E3029" stroke-width="1.8" stroke-linecap="round"/></g></g></svg>`;
+const T = { el:null, open:0, target:0, speaking:false, hasBoundary:false, nextBlink:performance.now()+2500, blinkT:0 };
+function tick(now){
+  if (T.el && T.el.isConnected){
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (T.speaking && !T.hasBoundary && !reduce) T.target = 0.35 + 0.55*Math.abs(Math.sin(now/95))*(0.6+0.4*Math.sin(now/410));
+    if (!T.speaking) T.target = 0;
+    T.open += (T.target-T.open)*0.35; if (T.hasBoundary) T.target *= 0.86;
+    const o = reduce ? (T.speaking?0.3:0) : T.open;
+    const m = T.el.querySelector('.mouth'), sm = T.el.querySelector('.smile'), ey = T.el.querySelector('.eyes'), hd = T.el.querySelector('.tHead');
+    m.setAttribute('ry',(1.4+o*5.2).toFixed(2)); m.setAttribute('rx',(8-o*1.5).toFixed(2)); sm.style.opacity = o>0.15?0:1;
+    if (now > T.nextBlink){ T.blinkT = now; T.nextBlink = now + 2600 + Math.random()*3200; }
+    const b = now - T.blinkT, sy = b<140 ? Math.abs(1-2*b/140) : 1;
+    ey.setAttribute('transform',`translate(0 ${86*(1-sy)}) scale(1 ${Math.max(0.1,sy)})`);
+    const bob = T.speaking&&!reduce ? Math.sin(now/600)*1.2 : 0, tilt = T.speaking&&!reduce ? Math.sin(now/1300)*1.6 : 0;
+    hd.setAttribute('transform',`translate(0 ${bob.toFixed(2)}) rotate(${tilt.toFixed(2)} 100 120)`);
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+function setSpeaking(v){ T.speaking = v; if (T.el) T.el.classList.toggle('speaking', v); }
+const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
+let voices = [], voice = null;
+function pickVoice(){
+  if (!synth) return; voices = synth.getVoices().filter(v=>/^en/i.test(v.lang));
+  const pref = S.plan && S.plan.voice; const sorted = voices.slice().sort((a,b)=>(b.lang==='en-GB')-(a.lang==='en-GB'));
+  voice = pref==='__none' ? null : (sorted.find(v=>v.name===pref) || sorted.find(v=>v.lang==='en-GB') || sorted[0] || null);
+}
+if (synth){ pickVoice(); synth.addEventListener ? synth.addEventListener('voiceschanged', ()=>{ pickVoice(); if (curView && curView.startsWith('l')) refreshVoiceSel && refreshVoiceSel(); }) : (synth.onvoiceschanged = pickVoice); }
+const WPS = 2.55;
+const words = t => t.split(/\s+/).filter(Boolean).length;
+const rate = () => (S.plan && S.plan.rate) || 0.95;
+function sentences(arr){ return arr.flatMap(p => (p.match(/[^.!?]+[.!?]+["'”’]?\s*|[^.!?]+$/g) || [p]).map(x=>x.trim()).filter(Boolean)); }
+
+/* ---------------- navigation ---------------- */
+let curView = 'start';
+function views(){ return ['start', ...CH.lessons.map((_,i)=>'l'+i), 'final', 'progress']; }
+function renderMenu(){
+  const m = $('#menu'); m.innerHTML = '';
+  const add = (v, label, state) => { const b = h('button',{type:'button','aria-current':String(curView===v),onclick:()=>go(v)}, state!==undefined ? h('span',{class:'dot'+(state==='done'?' done':state==='part'?' part':'')}) : null, label); m.append(b); };
+  add('start','Start', S.plan ? 'done' : '');
+  CH.lessons.forEach((l,i)=>{ const st = S.lessons[i]; add('l'+i, `${i+1}. ${l.title}`, st ? (st.done?'done':(st.watched||st.check)?'part':'') : ''); });
+  add('final','Final case test', S.test ? 'done' : '');
+  add('progress','My progress');
+  const cur = m.querySelector('[aria-current="true"]'); if (cur) cur.scrollIntoView({block:'nearest',inline:'center'});
+}
+function renderChip(){ const M = metrics(); $('#idxVal').textContent = M.index; $('#idxLvl').textContent = M.level; }
+$('#idxChip').onclick = () => go('progress');
+let lessonTimer = null, lessonStart = 0;
+function go(v){
+  stopSpeech(); flushTime(); curView = v; const main = $('#main'); main.innerHTML = '';
+  if (v==='start') renderStart(main); else if (v==='final') renderFinal(main); else if (v==='progress') renderProgress(main); else renderLesson(main, +v.slice(1));
+  renderMenu(); renderChip(); window.scrollTo({top:0, behavior:'instant'});
+  try { history.replaceState(null,'','#'+v); } catch(e){}
+  if (v.startsWith('l')) lessonStart = Date.now();
+}
+function flushTime(){ if (curView && curView.startsWith('l') && lessonStart){ const s = Math.round((Date.now()-lessonStart)/1000); if (s>0 && s<3600){ L(+curView.slice(1)).secs += s; S.secs += s; save(); } lessonStart = 0; } }
+addEventListener('visibilitychange', ()=>{ if (document.hidden) flushTime(); else if (curView.startsWith('l')) lessonStart = Date.now(); });
+
+/* ---------------- START: personal plan ---------------- */
+function renderStart(main){
+  const plan = S.plan || {time:10, style:'listen', rate:0.95, voice:null};
+  main.append(h('div',null, h('div',{class:'eyebrow'}, CH.num==='A' ? 'Appendix A' : 'Chapter '+CH.num), h('h2',{style:'font-size:2rem;margin-top:4px'}, CH.title), h('p',{class:'lede',style:'margin-top:8px'}, CH.summary)));
+  main.append(h('div',{class:'card'}, h('h3',null,'What you will be able to do'), h('ul',{style:'margin:0;padding-left:20px'}, CH.outcomes.map(o=>h('li',null,o)))));
+  const ans = (S.starter && S.starter.answers) ? S.starter.answers.slice() : CH.starter.map(()=>null);
+  const sq = h('div',{style:'display:flex;flex-direction:column;gap:14px'});
+  CH.starter.forEach((q,i)=>{ const box = h('div',null, h('p',{class:'q'}, `${i+1}. ${q.q}`)); const opts = h('div',{class:'opts'});
+    q.o.forEach((o,j)=>{ const b = h('button',{class:'opt',type:'button','aria-pressed':String(ans[i]===j)}, o); if (ans[i]===j) b.style.borderColor='var(--accent)';
+      b.onclick = () => { ans[i]=j; opts.querySelectorAll('.opt').forEach(x=>{x.style.borderColor='';}); b.style.borderColor='var(--accent)'; }; opts.append(b); });
+    box.append(opts); sq.append(box); });
+  main.append(h('div',{class:'card'}, h('h3',null,'1. Where are you starting from?'), h('p',{class:'lede',style:'margin-bottom:12px'},'Three quick questions. There is no pass mark: your answers just set the right pace for you.'), sq));
+  const tSel = seg([[5,'5 minutes'],[10,'10 minutes'],[20,'20 minutes or more']], plan.time, v=>plan.time=v, 'Time per session');
+  const stSel = seg([['listen','Listen and watch'],['read','Read at my own pace']], plan.style, v=>plan.style=v, 'Learning style');
+  const rSel = seg([[0.8,'Slower'],[0.95,'Normal'],[1.15,'Faster']], plan.rate, v=>plan.rate=v, 'Speaking speed');
+  main.append(h('div',{class:'card'}, h('h3',null,'2. How do you like to learn?'),
+    h('div',{class:'plan',style:'gap:12px'}, h('div',null,h('b',null,'Time per sitting'),tSel), h('div',null,h('b',null,'Style'),stSel), h('div',null,h('b',null,'Speaking speed'),rSel))));
+  const out = h('div');
+  const btn = h('button',{class:'btn primary',type:'button'},'Make my plan');
+  btn.onclick = () => {
+    const score = CH.starter.reduce((a,q,i)=>a+(ans[i]===q.a?1:0),0);
+    S.starter = {answers:ans, score}; S.plan = Object.assign(plan, {path: score>=2 ? 'fast' : 'steady'}); save(); showPlan(out);
+  };
+  main.append(h('div',{class:'card'}, h('h3',null,'3. Your plan'), h('div',{class:'row',style:'margin-bottom:10px'}, btn), out));
+  if (S.plan) showPlan(out);
+}
+function showPlan(out){
+  const p = S.plan, n = CH.lessons.length; out.innerHTML = '';
+  const per = Math.max(1, Math.floor(p.time / ((p.style==='read'?1.5:2.2) + 2)));
+  const sessions = []; for (let i=0;i<n;i+=per) sessions.push([i, Math.min(n,i+per)-1]);
+  const pathTxt = p.path==='fast' ? 'Fast track. You already know some of this, so each lesson lets you skip straight to the check and case. The plain-words summaries stay folded unless you need them.' : 'Step by step. Each lesson shows a plain-words summary after Sam explains it, and gives you a second try if a question trips you up.';
+  out.append(h('div',{class:'plan'},
+    h('div',null,h('b',null,'Your path'), h('span',null, h('span',{class:'pill acc'}, p.path==='fast'?'Fast track':'Step by step'),' ', pathTxt)),
+    h('div',null,h('b',null,'Starter score'), h('span',null, `${S.starter.score} of ${CH.starter.length}`)),
+    h('div',null,h('b',null,'Sessions'), h('span',null, `${sessions.length} sittings of about ${p.time} minutes, then the final case test.`))),
+    h('div',{class:'advice',style:'margin-top:10px'}, sessions.map((s,k)=>h('div',null, h('b',{style:'min-width:80px'},'Sitting '+(k+1)), h('span',null, s[0]===s[1] ? `Lesson ${s[0]+1}: ${CH.lessons[s[0]].title}` : `Lessons ${s[0]+1}–${s[1]+1}: ${CH.lessons[s[0]].title} to ${CH.lessons[s[1]].title}`)))),
+    h('div',{class:'row',style:'margin-top:12px'}, h('button',{class:'btn primary',type:'button',onclick:()=>go('l'+firstUnfinished())}, firstUnfinished()===0 && !S.lessons[0] ? 'Start lesson 1' : 'Continue: lesson '+(firstUnfinished()+1)), h('span',{class:'lede',style:'font-size:.88rem'},'You can change any of this later. Your progress is saved in this browser only.')));
+}
+function firstUnfinished(){ for (let i=0;i<CH.lessons.length;i++) if (!(S.lessons[i]&&S.lessons[i].done)) return i; return CH.lessons.length-1; }
+
+/* ---------------- LESSON ---------------- */
+let player = null, refreshVoiceSel = null;
+function stopSpeech(){ if (player){ player.stop(); } }
+function renderLesson(main, i){
+  const les = CH.lessons[i], st = L(i), plan = S.plan || {path:'steady', style:'listen'};
+  if (!S.plan) main.append(h('div',{class:'card',style:'background:var(--info-soft)'}, h('p',null,'Tip: set your pace and style on the ', h('a',{href:'#start',onclick:e=>{e.preventDefault();go('start');}},'Start'),' page first. It takes a minute.')));
+  const stepsEl = h('div',{class:'steps'});
+  function renderSteps(){ stepsEl.innerHTML=''; [['Watch',st.watched],['Check',!!st.check],['Case',st.caseDone]].forEach(([t,ok],k)=>stepsEl.append(h('span',{class: ok?'ok':''}, (ok?'✓ ':(k+1)+'. ')+t))); }
+  renderSteps();
+  main.append(h('div',null, h('div',{class:'eyebrow'}, `Lesson ${i+1} of ${CH.lessons.length} · about ${les.minutes||2} minutes`), h('h2',{style:'font-size:1.8rem;margin:4px 0 8px'}, les.title), stepsEl));
+
+  // --- WATCH
+  const slides = les.slides; const sents = slides.map(s=>sentences(s.say));
+  let si = 0, ui = 0, playing = false, token = 0, timers = [], mode = plan.style === 'read' ? 'read' : 'listen';
+  const img = h('img',{alt:''}); const tag = h('span',{class:'slidetag'}); const big = h('button',{class:'bigplay',type:'button'}, h('span',{class:'c'}, h('span',{html:'<svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" fill="#fff"/></svg>'})), h('span',null,'Play lesson'));
+  const stage = h('div',{class:'stage'}, img, tag, big);
+  const tutorEl = h('div',{class:'tutor','aria-hidden':'true',html:TUTOR_SVG}); T.el = tutorEl;
+  const cap = h('div',{class:'cap','aria-live':'polite'});
+  const readBox = h('div',{class:'read'});
+  const speakRow = h('div',{class:'speaker'}, h('div',{class:'tutor-wrap'}, tutorEl, h('span',null,'Sam, your tutor')), cap);
+  const playBtn = h('button',{class:'btn primary',type:'button'},'Play');
+  const prevBtn = h('button',{class:'btn',type:'button'},'◀ Back'), nextBtn = h('button',{class:'btn',type:'button'},'Next ▶');
+  const voiceSel = h('select',{id:'voiceSel','aria-label':'Voice'});
+  refreshVoiceSel = () => { voiceSel.innerHTML=''; voiceSel.append(h('option',{value:'__none'},'No voice: captions only')); voices.slice().sort((a,b)=>(b.lang==='en-GB')-(a.lang==='en-GB')).forEach(v=>voiceSel.append(h('option',{value:v.name},`${v.name} (${v.lang})`))); voiceSel.value = voice ? voice.name : '__none'; };
+  refreshVoiceSel();
+  voiceSel.onchange = () => { S.plan = S.plan || {path:'steady',style:'listen',time:10,rate:0.95}; S.plan.voice = voiceSel.value; save(); pickVoice(); if (playing){ stop(); play(); } };
+  const rateSel = seg([[0.8,'Slower'],[0.95,'Normal'],[1.15,'Faster']], rate(), v=>{ S.plan = S.plan || {path:'steady',style:'listen',time:10}; S.plan.rate = v; save(); if (playing){ stop(); play(); } }, 'Speed');
+  const modeSel = seg([['listen','Listen'],['read','Read']], mode, v=>{ stop(); mode = v; layout(); }, 'Mode');
+  const plainBtn = h('button',{class:'btn small',type:'button'},'Explain more simply');
+  const ctrls = h('div',{class:'ctrls'}, prevBtn, playBtn, nextBtn, h('span',{class:'grow'}), modeSel, rateSel, h('label',null,'Voice', voiceSel));
+  const plainCard = h('div',{class:'plain',hidden:true}, h('b',null,'In plain words'), h('ul',null, les.plain.map(p=>h('li',null,p))));
+  const keyCard = h('div',{class:'key',hidden:!st.watched}, h('b',{class:'k'},'Key point'), h('p',null, les.keyPoint));
+  const skipBtn = h('button',{class:'btn small',type:'button',onclick:()=>{ stop(); markWatched(); checkCard.scrollIntoView({behavior:'smooth'}); }}, 'I know this: skip to the check');
+  plainBtn.onclick = () => { plainCard.hidden = !plainCard.hidden; plainBtn.textContent = plainCard.hidden ? 'Explain more simply' : 'Hide plain words'; };
+  const watchCard = h('div',{class:'card'}, stage, speakRow, readBox, ctrls, h('div',{class:'row',style:'margin-top:10px'}, plainBtn, plan.path==='fast' ? skipBtn : null), h('div',{style:'margin-top:10px'}, plainCard));
+  main.append(watchCard, keyCard);
+  function layout(){ speakRow.hidden = mode!=='listen'; readBox.hidden = mode!=='read'; playBtn.hidden = mode!=='listen'; big.hidden = mode!=='listen' || playing; rateSel.hidden = mode!=='listen'; voiceSel.parentNode.hidden = mode!=='listen'; showSlide(); }
+  function showSlide(){
+    img.src = `slides/s-${pad(slides[si].img)}.jpg`; img.alt = `Slide for ${les.title}`; tag.textContent = `${si+1} / ${slides.length}`;
+    prevBtn.disabled = si===0; nextBtn.textContent = si===slides.length-1 ? (mode==='read' ? 'Finish reading ✓' : 'Next ▶') : 'Next ▶';
+    nextBtn.disabled = mode==='listen' && si===slides.length-1;
+    if (mode==='read'){ readBox.innerHTML=''; slides[si].say.forEach(p=>readBox.append(h('p',null,p))); }
+    else caption(-1);
+  }
+  function caption(ci){ cap.innerHTML=''; const t = sents[si][ui]||''; let pos=0; t.split(/(\s+)/).forEach(part=>{ if(!part.trim()){cap.append(part);pos+=part.length;return;} const s0=pos,e0=pos+part.length; pos=e0; cap.append(h('span',{class: ci<0?'w':(ci>=e0?'w past':ci>=s0?'w now':'w')},part)); }); }
+  function clear(){ timers.forEach(clearTimeout); timers=[]; }
+  function stop(){ playing=false; token++; clear(); if (synth) synth.cancel(); setSpeaking(false); playBtn.textContent='Play'; }
+  function play(){ if (playing) return; playing = true; big.hidden = true; playBtn.textContent='Pause'; speak(); }
+  function speak(){
+    const tok = ++token; clear(); const text = sents[si][ui]; caption(-1);
+    const est = words(text)/(WPS*rate())*1000; const done = () => { if (tok!==token) return; setSpeaking(false); advance(); };
+    if (synth && voice){
+      const u = new SpeechSynthesisUtterance(text); u.voice = voice; u.lang = voice.lang; u.rate = rate(); T.hasBoundary = false;
+      u.onstart = () => { if (tok===token) setSpeaking(true); };
+      u.onboundary = e => { if (tok!==token || e.name==='sentence') return; T.hasBoundary = true; T.target = 0.55+Math.random()*0.45; caption(e.charIndex); };
+      u.onend = done; u.onerror = e => { if (tok!==token || e.error==='interrupted' || e.error==='canceled') return; silent(tok,text,est); };
+      synth.speak(u);
+      timers.push(setTimeout(()=>{ if (tok===token && !T.speaking && !synth.speaking) silent(tok,text,est); }, 2500));
+      timers.push(setTimeout(done, est*2.2+4000));
+    } else silent(tok,text,est);
+  }
+  function silent(tok,text,est){ if (tok!==token) return; clear(); T.hasBoundary=false; setSpeaking(true);
+    const starts=[]; let pos=0; text.split(/(\s+)/).forEach(p=>{ if(p.trim()) starts.push(pos); pos+=p.length; });
+    starts.forEach((c,k)=>timers.push(setTimeout(()=>{ if(tok===token) caption(c); }, est*k/starts.length)));
+    timers.push(setTimeout(()=>{ if(tok!==token) return; setSpeaking(false); advance(); }, est+250)); }
+  function advance(){ if (!playing) return; ui++;
+    if (ui >= sents[si].length){ if (si >= slides.length-1){ stop(); markWatched(); return; } si++; ui=0; showSlide(); const tok=token; timers.push(setTimeout(()=>{ if(playing&&tok===token) speak(); }, 900)); return; }
+    speak(); }
+  function markWatched(){ if (!st.watched){ st.watched = true; save(); renderSteps(); } keyCard.hidden = false; if (plan.path!=='fast') { plainCard.hidden = false; plainBtn.textContent='Hide plain words'; } cap.innerHTML = '<b>End of the lesson.</b> Now try the quick check below.'; }
+  playBtn.onclick = () => playing ? stop() : play(); big.onclick = play;
+  prevBtn.onclick = () => { const was = playing; stop(); si = Math.max(0, si-1); ui=0; showSlide(); if (was) play(); };
+  nextBtn.onclick = () => { if (mode==='read' && si===slides.length-1){ markWatched(); checkCard.scrollIntoView({behavior:'smooth'}); return; } const was = playing; stop(); si = Math.min(slides.length-1, si+1); ui=0; showSlide(); if (was) play(); };
+  player = {stop};
+
+  // --- CHECK (with confidence and adaptive second chance)
+  const checkCard = h('div',{class:'card'}); main.append(checkCard);
+  function renderCheck(){
+    checkCard.innerHTML=''; checkCard.append(h('div',{class:'eyebrow'},'Quick check'));
+    const c = les.check;
+    if (st.check){ // already answered: show summary + allow retry practice
+      checkCard.append(h('p',{class:'q'}, c.q), h('p',{class:'fb'}, st.check.ok ? h('span',{class:'pill good'},'Right first time') : h('span',{class:'pill warn'},'Missed first time'), ' ', c.e),
+        st.retry ? h('p',{class:'fb'}, 'Second chance: ', st.retry.ok ? h('span',{class:'pill good'},'right') : h('span',{class:'pill bad'},'missed')) : null,
+        h('div',{class:'row',style:'margin-top:8px'}, h('button',{class:'btn small',type:'button',onclick:()=>{ askQuestion(checkCard, c, true, ()=>{}); }},'Practise again (not scored)')));
+      return;
+    }
+    askQuestion(checkCard, c, false, (ok, conf) => {
+      st.check = {ok, conf}; save(); renderSteps();
+      if (!ok && c.retry){
+        plainCard.hidden = false; plainBtn.textContent='Hide plain words';
+        const r = h('div',{style:'margin-top:14px'}, h('div',{class:'plain'}, h('b',null,'Let\'s look at it another way'), h('ul',null, les.plain.map(p=>h('li',null,p)))));
+        const rq = h('div',{style:'margin-top:12px'}); r.append(h('div',{class:'eyebrow',style:'margin-top:12px'},'Second chance'), rq); checkCard.append(r);
+        askQuestion(rq, c.retry, false, (ok2) => { st.retry = {ok:ok2}; save(); if (!ok2) rq.append(h('p',{class:'fb'}, h('span',{class:'pill warn'},'Tip'),' Try the lesson again in Read mode, at your own pace. It is marked for review on your progress page.')); caseCard.hidden=false; }, true);
+      } else caseCard.hidden = false;
+    });
+  }
+  // --- CASE simulation
+  const caseCard = h('div',{class:'card',hidden: !st.check}); main.append(caseCard);
+  function renderCase(){
+    const sc = les.scenario; caseCard.innerHTML='';
+    caseCard.append(h('div',{class:'eyebrow'},'Case simulation'), h('h3',null, sc.title), h('p',{class:'case-set'}, sc.setting));
+    const maxPts = sc.steps.length*2; let pts = 0, k = 0;
+    const host = h('div'); caseCard.append(host);
+    if (st.caseDone){ host.append(h('p',{class:'fb'}, h('span',{class: st.caseScore>=maxPts*0.75?'pill good':st.caseScore>=maxPts/2?'pill warn':'pill bad'}, `You scored ${st.caseScore} of ${maxPts}`), ' ', h('button',{class:'btn small',type:'button',onclick:()=>{ st.caseDone=false; st.caseScore=0; save(); renderCase(); }},'Try the case again'))); finishRow(); return; }
+    function step(){
+      const s = sc.steps[k]; const box = h('div',{class:'stepbox'}, h('p',{class:'q'}, `${k+1}. ${s.prompt}`)); const opts = h('div',{class:'opts'}); const fb = h('div',{class:'fb'});
+      s.choices.forEach(ch => { const b = h('button',{class:'opt',type:'button'}, ch.t); b.onclick = () => {
+        opts.querySelectorAll('.opt').forEach(x=>x.disabled=true); b.classList.add(ch.s===2?'right':ch.s===1?'part':'wrong');
+        if (ch.s<2){ const best = s.choices.find(c=>c.s===2); if (best) [...opts.children].find(x=>x.textContent===best.t).classList.add('right'); }
+        pts += ch.s; fb.innerHTML = `<b>${ch.s===2?'Good call.':ch.s===1?'Partly.':'Not the best choice.'}</b> ${ch.fb}`;
+        k++; if (k < sc.steps.length) step(); else { st.caseDone = true; st.caseScore = pts; st.caseMax = maxPts; st.done = st.done || !!st.check; save(); renderSteps();
+          host.append(h('p',{class:'fb',style:'margin-top:12px'}, h('span',{class: pts>=maxPts*0.75?'pill good':pts>=maxPts/2?'pill warn':'pill bad'}, `Case score: ${pts} of ${maxPts}`))); finishRow(); } };
+        opts.append(b); });
+      box.append(opts, fb); host.append(box);
+    }
+    step();
+  }
+  function finishRow(){
+    st.done = !!(st.check && st.caseDone); save();
+    const next = i < CH.lessons.length-1 ? h('button',{class:'btn primary',type:'button',onclick:()=>go('l'+(i+1))}, `Next: lesson ${i+2}`) : h('button',{class:'btn primary',type:'button',onclick:()=>go('final')}, 'Go to the final case test');
+    caseCard.append(h('div',{class:'row',style:'margin-top:14px'}, next, h('button',{class:'btn',type:'button',onclick:()=>go('progress')},'See my progress')));
+  }
+  renderCheck(); renderCase(); layout();
+}
+
+/* generic question with confidence rating */
+function askQuestion(host, q, practice, onDone, isRetry){
+  const box = h('div'); host.append(box);
+  if (!isRetry || true) box.append(h('p',{class:'q'}, q.q));
+  let conf = null;
+  const confSeg = seg([['sure','I\'m sure'],['unsure','I\'m not sure']], null, v=>conf=v, 'Confidence');
+  if (!practice) box.append(h('div',{class:'conf'}, h('span',null,'Before you answer, how sure are you?'), confSeg, h('span',{style:'font-size:.8rem'},'(optional, helps your self-awareness score)')));
+  const opts = h('div',{class:'opts'}); const fb = h('div',{class:'fb'});
+  q.o.forEach((o,j)=>{ const b = h('button',{class:'opt',type:'button'}, o); b.onclick = () => {
+    const ok = j===q.a; opts.querySelectorAll('.opt').forEach(x=>x.disabled=true); b.classList.add(ok?'right':'wrong'); if (!ok) opts.children[q.a].classList.add('right');
+    fb.innerHTML = `<b>${ok?'Right.':'Not quite.'}</b> ${q.e}`; onDone(ok, conf); };
+    opts.append(b); });
+  box.append(opts, fb);
+}
+
+/* ---------------- FINAL case test ---------------- */
+function renderFinal(main){
+  const M = metrics();
+  main.append(h('div',null, h('div',{class:'eyebrow'},'Final case test'), h('h2',{style:'font-size:1.8rem;margin-top:4px'},'Check your learning path'), h('p',{class:'lede',style:'margin-top:6px'}, `${CH.test.length} short questions across all ${CH.lessons.length} lessons. You see the answer after each one. Your latest attempt counts towards your learning index, and the results show which lessons to revisit.`)));
+  if (M.done < CH.lessons.length) main.append(h('div',{class:'card',style:'background:var(--signal-soft)'}, h('p',null, `You have finished ${M.done} of ${CH.lessons.length} lessons. You can take the test now, but you will probably score higher after finishing them.`)));
+  const host = h('div',{class:'card'}); main.append(host);
+  if (S.test) { host.append(h('p',null, h('span',{class:'pill acc'}, `Last attempt: ${S.test.score} of ${CH.test.length}`), ` · ${S.test.attempts} attempt${S.test.attempts>1?'s':''}`), h('div',{class:'row',style:'margin-top:10px'}, h('button',{class:'btn primary',type:'button',onclick:()=>{ host.innerHTML=''; runTest(host); }},'Take the test again'), h('button',{class:'btn',type:'button',onclick:()=>go('progress')},'See my results'))); return; }
+  host.append(h('button',{class:'btn primary',type:'button',onclick:()=>{ host.innerHTML=''; runTest(host); }},'Start the test'));
+}
+function runTest(host){
+  const answers = []; let k = 0;
+  const prog = h('p',{class:'eyebrow'}); host.append(prog); const qhost = h('div'); host.append(qhost);
+  function next(){
+    qhost.innerHTML=''; prog.textContent = `Question ${k+1} of ${CH.test.length} · from lesson ${CH.test[k].lesson+1}: ${CH.lessons[CH.test[k].lesson].title}`;
+    askQuestion(qhost, CH.test[k], false, (ok, conf) => { answers.push({ok, conf, lesson: CH.test[k].lesson});
+      qhost.append(h('div',{class:'row',style:'margin-top:12px'}, h('button',{class:'btn primary',type:'button',onclick:()=>{ k++; if (k<CH.test.length) next(); else finish(); }}, k<CH.test.length-1?'Next question':'See my results'))); });
+  }
+  function finish(){ const score = answers.filter(a=>a.ok).length; S.test = {answers, score, attempts:(S.test?S.test.attempts:0)+1, at:Date.now()}; save(); go('progress'); }
+  next();
+}
+
+/* ---------------- PROGRESS: learning index, advice, certificate ---------------- */
+function gaugeSVG(v){
+  const r=60, c=2*Math.PI*r, f=c*v/100;
+  return `<svg viewBox="0 0 150 150" role="img" aria-label="Learning index ${v} out of 100"><circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="14"/><circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--accent)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${f} ${c}" transform="rotate(-90 75 75)"/><text x="75" y="80" text-anchor="middle" font-size="34" font-weight="700" fill="var(--ink)" font-family="JetBrains Mono, monospace">${v}</text><text x="75" y="102" text-anchor="middle" font-size="11" fill="var(--muted)">out of 100</text></svg>`;
+}
+function advice(){
+  const out = []; const n = CH.lessons.length;
+  const testBy = {}; if (S.test) S.test.answers.forEach(a=>{ (testBy[a.lesson] = testBy[a.lesson]||{ok:0,n:0}); testBy[a.lesson].n++; if (a.ok) testBy[a.lesson].ok++; });
+  const weak = [];
+  for (let i=0;i<n;i++){ const l = S.lessons[i]; const reasons = [];
+    if (l && l.check && !l.check.ok) reasons.push('missed the quick check');
+    if (l && l.caseDone && l.caseScore < l.caseMax*0.5) reasons.push(`scored ${l.caseScore} of ${l.caseMax} on the case`);
+    if (testBy[i] && testBy[i].ok < testBy[i].n) reasons.push(`${testBy[i].n-testBy[i].ok} final-test question${testBy[i].n-testBy[i].ok>1?'s':''} wrong`);
+    if (reasons.length) weak.push([i, reasons]); }
+  weak.sort((a,b)=>b[1].length-a[1].length).slice(0,3).forEach(([i,r])=>out.push(['Revisit', `Lesson ${i+1}, ${CH.lessons[i].title}: you ${r.join(', ')}. Try it in Read mode and open "Explain more simply".`, 'l'+i]));
+  const nf = [...Array(n).keys()].find(i=>!(S.lessons[i]&&S.lessons[i].done));
+  if (nf!==undefined) out.push(['Next', `Carry on with lesson ${nf+1}, ${CH.lessons[nf].title}.`, 'l'+nf]);
+  else if (!S.test) out.push(['Next', 'All lessons done. Take the final case test to check your learning path.', 'final']);
+  const M = metrics();
+  if (M.calN >= 4 && M.C < 0.6) out.push(['Self-awareness', 'Your confidence often did not match your answers. In clinical work, knowing when you are unsure matters as much as knowing the answer. Keep rating your confidence.', null]);
+  if (S.plan && S.secs > 0){ const done = Object.values(S.lessons).filter(l=>l.done); const avg = done.length ? done.reduce((a,l)=>a+l.secs,0)/done.length/60 : 0;
+    if (avg >= 0.5) out.push(['Your pace', `You spend about ${avg.toFixed(1)} minutes per lesson. ${avg > 6 ? 'Taking your time is fine. Shorter sittings may suit you better: try 5-minute sittings on the Start page.' : avg < 2.5 ? 'You move quickly. If the cases feel easy, the Fast track path lets you skip straight to them.' : 'That fits your plan well.'}`, null]); }
+  if (!out.length) out.push(['Well done', 'No gaps found. You could teach this chapter to a colleague.', null]);
+  return out;
+}
+function renderProgress(main){
+  const M = metrics();
+  main.append(h('div',null, h('div',{class:'eyebrow'},'My progress'), h('h2',{style:'font-size:1.8rem;margin-top:4px'},'Your learning index'), h('p',{class:'lede',style:'margin-top:6px'}, S.test ? 'Based on your lessons, cases and final test.' : 'Provisional until you take the final case test.')));
+  const dims = [['Knowledge', M.K, 'Quick checks right first time, plus final-test answers'], ['Applying it', M.A, 'Points from the case simulations'], ['Self-awareness', M.C, 'How often your confidence matched your answer'], ['Completion', M.P, 'Lessons finished and final test taken']];
+  const dimsEl = h('div',{class:'dims'}, dims.map(([n,v,d])=>h('div',null, h('div',{class:'dim'}, h('span',null,n), h('div',{class:'track'}, h('div',{class:'fill',style:`width:${v==null?0:pct(v)}%`})), h('output',null, v==null?'—':pct(v)+'%')), h('div',{style:'font-size:.78rem;color:var(--muted);margin:-4px 0 0'}, d))));
+  const ladder = h('div',{class:'ladder'}, LEVELS.map(l=>h('div',{class: l[1]===M.level?'on':''}, l[1], h('br'), `${l[0]}+`)));
+  main.append(h('div',{class:'card'}, h('div',{class:'gauge'}, h('div',{html:gaugeSVG(M.index)}), h('div',{style:'flex:1;min-width:240px'}, h('h3',null, M.level), h('p',{class:'lede'}, M.levelText), ladder)), h('div',{style:'margin-top:16px'}, dimsEl),
+    h('p',{class:'foot',style:'margin-top:12px'},'How it is worked out: knowledge 35%, applying it 35%, self-awareness 15%, completion 15%. Levels follow Benner\'s "novice to expert" stages used in clinical education.')));
+  const adv = h('div',{class:'advice'}, advice().map(([t,txt,v])=>h('div',null, h('span',{class:'pill acc',style:'flex:none'},t), h('span',{style:'flex:1'},txt), v ? h('button',{class:'btn small',type:'button',onclick:()=>go(v)},'Go') : null)));
+  main.append(h('div',{class:'card'}, h('h3',null,'What to do next'), adv));
+  const rows = CH.lessons.map((les,i)=>{ const l = S.lessons[i]||{}; return h('tr',null, h('td',null, `${i+1}. ${les.title}`), h('td',null, l.watched?'✓':'—'), h('td',null, l.check ? (l.check.ok ? h('span',{class:'pill good'},'Right') : h('span',{class:'pill warn'},'Missed')) : '—'), h('td',null, l.caseDone ? `${l.caseScore}/${l.caseMax}` : '—'), h('td',{class:'mono'}, l.secs ? (l.secs<60 ? '<1 min' : Math.round(l.secs/60)+' min') : '—')); });
+  main.append(h('div',{class:'card'}, h('h3',null,'Lesson by lesson'), h('div',{class:'tablewrap'}, h('table',{class:'t'}, h('thead',null,h('tr',null, ['Lesson','Watched','Check','Case','Time'].map(t=>h('th',null,t)))), h('tbody',null,rows))),
+    S.test ? h('p',{style:'margin-top:10px'}, h('span',{class:'pill acc'}, `Final test: ${S.test.score} of ${CH.test.length}`)) : null));
+  // certificate
+  const nameIn = h('input',{type:'text',id:'certName',placeholder:'Your name as it should appear',value:S.name||''});
+  const certBtn = h('button',{class:'btn primary',type:'button'},'Download certificate');
+  const note = h('p',{class:'foot'});
+  const eligible = S.test && M.index >= 60;
+  certBtn.disabled = !eligible; note.textContent = eligible ? 'Saves a picture of your certificate. Your score is calculated in your own browser, so keep the file as your record.' : 'Available once you have taken the final case test and reached Competent (60 or more).';
+  certBtn.onclick = () => { S.name = nameIn.value.trim(); save(); makeCert(S.name || 'Learner', M); };
+  main.append(h('div',{class:'card'}, h('h3',null,'Certificate'), h('div',{class:'row'}, nameIn, certBtn), note,
+    h('div',{class:'row',style:'margin-top:14px'}, h('button',{class:'btn small',type:'button',onclick:()=>{ resetBox.hidden = false; }},'Start this chapter again'))));
+  const resetBox = h('div',{class:'card',hidden:true,style:'background:var(--bad-soft)'}, h('p',null,'This clears your plan, answers and scores for this chapter in this browser. It cannot be undone.'), h('div',{class:'row',style:'margin-top:10px'}, h('button',{class:'btn',type:'button',onclick:()=>{ S = blank(); save(); go('start'); }},'Yes, clear this chapter'), h('button',{class:'btn',type:'button',onclick:()=>{ resetBox.hidden=true; }},'Keep my progress')));
+  main.append(resetBox);
+}
+function makeCert(name, M){
+  const c = document.createElement('canvas'); c.width = 1600; c.height = 1130; const x = c.getContext('2d');
+  x.fillStyle = '#FFFFFF'; x.fillRect(0,0,1600,1130); x.strokeStyle = '#0E6B66'; x.lineWidth = 14; x.strokeRect(40,40,1520,1050); x.lineWidth = 2; x.strokeRect(70,70,1460,990);
+  x.fillStyle = '#0E6B66'; x.textAlign = 'center'; x.font = '600 30px Georgia, serif'; x.fillText('A CLINICAL GUIDE TO AI IN HEALTHCARE', 800, 180);
+  x.fillStyle = '#14232A'; x.font = '600 72px Georgia, serif'; x.fillText('Certificate of learning', 800, 290);
+  x.font = '28px Arial, sans-serif'; x.fillStyle = '#55686D'; x.fillText('This is to record that', 800, 380);
+  x.fillStyle = '#14232A'; x.font = '600 64px Georgia, serif'; x.fillText(name.slice(0,48), 800, 470);
+  x.font = '28px Arial, sans-serif'; x.fillStyle = '#55686D'; x.fillText('has completed', 800, 550);
+  x.fillStyle = '#14232A'; x.font = '600 40px Georgia, serif'; x.fillText((CH.num==='A'?'Appendix A: ':'Chapter '+CH.num+': ') + CH.title, 800, 620, 1400);
+  x.fillStyle = '#0E6B66'; x.font = '600 46px Arial, sans-serif'; x.fillText(`Learning index ${M.index} / 100  ·  ${M.level}`, 800, 740);
+  x.fillStyle = '#55686D'; x.font = '24px Arial, sans-serif';
+  x.fillText(`Knowledge ${pct(M.K)}%   ·   Applying it ${pct(M.A)}%   ·   Self-awareness ${M.C==null?'—':pct(M.C)+'%'}   ·   Final test ${S.test.score}/${CH.test.length}`, 800, 800);
+  x.fillText('Issued ' + new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) + '  ·  Self-assessed online course record, calculated in the learner\'s browser', 800, 980);
+  c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `certificate-${CH.id}.png`; document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000); });
+}
+
+/* ---------------- boot ---------------- */
+$('#chNum').textContent = CH.num==='A' ? 'Appendix A' : 'Chapter '+CH.num;
+$('#chTitle span').textContent = CH.title;
+const hv = (location.hash||'').slice(1);
+go(views().includes(hv) ? hv : (S.plan ? 'l'+firstUnfinished() : 'start'));
+</script>
+
+</body>
+</html>
