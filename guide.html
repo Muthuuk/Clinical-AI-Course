@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quick Guide · Clinical AI Course</title>
+<meta name="description" content="A one-page picture guide to using the Clinical AI Course: start, lessons, checks, cases, final test, learning index and certificate.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#F3F6F6; --surface:#FFFFFF; --surface-2:#E9EFEF; --ink:#14232A; --muted:#55686D; --line:#D2DCDD;
+  --accent:#0E6B66; --accent-soft:#D6ECEA; --signal:#B97A06; --signal-soft:#F7EBD2; --good:#2C7A4B; --good-soft:#DCEFE3;
+  --bad:#A23B3B; --bad-soft:#F5DEDE;
+  --f-display:"Newsreader", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17; --good:#5CBB84; --good-soft:#18352A;
+  --bad:#E07A7A; --bad-soft:#3A1E1E; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0D1618; --surface:#142124; --surface-2:#1B2B2E; --ink:#E3ECEC; --muted:#92A6A9; --line:#2A3C3F;
+  --accent:#4DB6AC; --accent-soft:#183A38; --signal:#E3A53A; --signal-soft:#3A2E17; --good:#5CBB84; --good-soft:#18352A;
+  --bad:#E07A7A; --bad-soft:#3A1E1E; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;margin:0}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;line-height:1.15;margin:0;text-wrap:balance}
+p{margin:0}
+a{color:var(--accent)}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 16px 60px;display:flex;flex-direction:column;gap:26px}
+.eyebrow{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.lede{color:var(--muted);max-width:70ch;margin-top:8px}
+.back{font-size:.9rem;text-decoration:none}
+
+/* journey strip */
+.journey{display:grid;grid-template-columns:repeat(7,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 10px}
+.stop{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;position:relative;padding:0 4px}
+.stop:not(:last-child)::after{content:"";position:absolute;top:21px;left:calc(50% + 24px);right:calc(-50% + 24px);height:2px;background:var(--accent);opacity:.45}
+.dot{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-family:var(--f-mono);font-weight:600;font-size:1.05rem;border:2px solid var(--accent)}
+.stop b{font-size:.86rem;line-height:1.25}
+.stop span{font-size:.74rem;color:var(--muted);line-height:1.3}
+.stop .txt{display:flex;flex-direction:column;gap:2px}
+@media (max-width:760px){
+  .journey{grid-template-columns:1fr;gap:12px;padding:16px}
+  .stop{flex-direction:row;text-align:left;align-items:center;gap:12px}
+  .stop:not(:last-child)::after{top:46px;left:21px;right:auto;width:2px;height:12px}
+}
+
+/* step sections */
+.step{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:22px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.step:nth-of-type(even) .shot{order:-1}
+@media (max-width:760px){ .step{grid-template-columns:1fr} .step:nth-of-type(even) .shot{order:0} }
+.num{font-family:var(--f-mono);font-size:.78rem;color:var(--accent);font-weight:600}
+.step h2{font-size:1.45rem;margin:2px 0 8px}
+.step ol,.step ul{margin:8px 0 0;padding-left:20px}
+.step li{margin:4px 0}
+.tip{margin-top:10px;font-size:.88rem;background:var(--signal-soft);border-left:3px solid var(--signal);padding:8px 10px;border-radius:6px}
+
+/* mock screens */
+.shot{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:.85rem;min-width:0}
+.bar3{display:flex;gap:5px;margin-bottom:10px}.bar3 i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.mono{font-family:var(--f-mono);font-size:.72rem;color:var(--accent)}
+.pill{display:inline-flex;border-radius:99px;padding:2px 9px;font-size:.74rem;font-weight:600;background:var(--surface-2)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)} .pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--signal-soft);color:var(--signal)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.btn{display:inline-block;border-radius:8px;padding:5px 11px;font-weight:600;font-size:.8rem;border:1px solid var(--line);background:var(--surface)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+:root[data-theme="dark"] .btn.primary{color:#0D1618}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .btn.primary{color:#0D1618} }
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.opt{border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:var(--surface);margin-top:5px}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.ok{border-color:var(--good);background:var(--good-soft)}
+.lbl{font-size:.7rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:8px 0 3px}
+.callout{position:relative}
+.tag{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--signal);color:#fff;font-size:.7rem;font-weight:700;font-family:var(--f-mono);flex:none}
+.slide{aspect-ratio:16/9;background:linear-gradient(135deg,var(--surface),var(--surface-2));border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;text-align:center;padding:10px}
+.slide b{font-family:var(--f-display);font-size:1.15rem}
+.cap{margin-top:8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 9px;display:flex;gap:8px;align-items:center}
+.sam{width:28px;height:28px;border-radius:50%;background:var(--accent);flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:.8rem}
+.meter{display:grid;grid-template-columns:auto 1fr auto;gap:6px 8px;align-items:center;font-size:.78rem}
+.meter .m{height:7px;background:var(--surface-2);border-radius:99px;overflow:hidden}.meter .m i{display:block;height:100%;background:var(--accent)}
+.big{font-family:var(--f-mono);font-size:2.2rem;font-weight:600;color:var(--accent);line-height:1}
+.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
+.ladder div{border-radius:6px;padding:5px 4px;text-align:center;font-size:.68rem;background:var(--surface-2);color:var(--muted);line-height:1.2}
+.ladder div.on{background:var(--accent);color:#fff;font-weight:700}
+:root[data-theme="dark"] .ladder div.on{color:#0D1618}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .ladder div.on{color:#0D1618} }
+.cert{border:2px solid var(--signal);border-radius:8px;padding:12px;text-align:center;background:var(--surface)}
+.cert .t{font-family:var(--f-display);font-size:1.15rem;font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.facts div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.facts b{display:block;margin-bottom:3px}
+.facts span{font-size:.88rem;color:var(--muted)}
+.foot{font-size:.8rem;color:var(--muted)}
+@media print{
+  body{background:#fff} .wrap{padding:0} .step,.journey,.facts div{break-inside:avoid}
+  .back,.print{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <a class="back" href="index.html">◀ Back to the course</a>
+    <div class="eyebrow" style="margin-top:12px">Quick guide</div>
+    <h1 style="font-size:2.2rem;margin-top:4px">How to use the Clinical AI Course</h1>
+    <p class="lede">Every chapter works the same way. Learn it once here, then use it for any chapter. Lessons take about 2 minutes each, and you can split a chapter into short sittings.</p>
+  </header>
+
+  <!-- Journey at a glance -->
+  <nav class="journey" aria-label="The seven stages of a chapter">
+    <div class="stop"><div class="dot">1</div><div class="txt"><b>Pick a chapter</b><span>Click a card that says Start</span></div></div>
+    <div class="stop"><div class="dot">2</div><div class="txt"><b>Set your plan</b><span>3 questions, your time and style</span></div></div>
+    <div class="stop"><div class="dot">3</div><div class="txt"><b>Short lesson</b><span>About 2 minutes with Sam</span></div></div>
+    <div class="stop"><div class="dot">4</div><div class="txt"><b>Quick check</b><span>One question, a second chance</span></div></div>
+    <div class="stop"><div class="dot">5</div><div class="txt"><b>Clinical case</b><span>Decide what to do</span></div></div>
+    <div class="stop"><div class="dot">6</div><div class="txt"><b>Final case test</b><span>After all the lessons</span></div></div>
+    <div class="stop"><div class="dot">7</div><div class="txt"><b>Index and certificate</b><span>See your level, save proof</span></div></div>
+  </nav>
+
+  <!-- 1 -->
+  <section class="step">
+    <div>
+      <div class="num">STEP 1</div>
+      <h2>Pick a chapter</h2>
+      <p>On the course home page, click any chapter card that shows a green <b>Start</b> label. Cards marked <b>Coming soon</b> are not open yet.</p>
+      <p style="margin-top:8px">Once you begin, the card shows a progress bar, your learning index and how many lessons you have finished.</p>
+      <div class="tip">New to AI? Begin with <b>Appendix A</b>. It explains the basic ideas the other chapters build on.</div>
+    </div>
+    <div class="shot" aria-hidden="true">
+      <div class="bar3"><i></i><i></i><i></i></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="card"><div class="mono">Appendix A</div><b style="font-size:.85rem">An Introduction to AI for the Clinical Expert</b>
+          <div style="height:5px;background:var(--surface-2);border-radius:9px;margin:6px 0"><i style="display:block;width:30%;height:100%;background:var(--accent);border-radius:9px"></i></div>
+          <span class="pill acc">Index 43 · Advanced beginner</span></div>
+        <div class="card"><div class="mono">Chapter 1</div><b style="font-size:.85rem">Modern Healthcare and the Case for AI</b>
+          <div class="row" style="margin-top:8px"><span class="pill acc">Start</span><span style="color:var(--muted);font-size:.75rem">Not started</span></div></div>
+        <div class="card" style="opacity:.5;grid-column:span 2"><div class="mono">Chapter 6</div><b style="font-size:.85rem">AI Tools for Daily Clinical Practice</b><div style="color:var(--muted);font-size:.75rem;margin-top:4px">Coming soon</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="step">
+    <div>
+      <div class="num">STEP 2</div>
+      <h2>Set your plan</h2>
+      <ol>
+        <li>Answer <b>three quick questions</b>. There is no pass mark. They only set the right pace for you.</li>
+        <li>Choose your <b>time per session</b>: 5, 10, or 20 minutes or more.</li>
+        <li>Choose your <b>learning style</b>: <i>Listen and watch</i> (Sam reads aloud) or <i>Read at my own pace</i>.</li>
+        <li>Click <b>Make my plan</b>. The course splits the chapter into sittings that fit your time.</li>
+      </ol>
+      <div class="tip">If you already know the topic, the plan may offer the <b>Fast track</b>, which takes you more quickly to the cases.</div>
+    </div>
+    <div class="shot" aria-hidden="true">
+      <div class="bar3"><i></i><i></i><i></i></div>
+      <div class="card">
+        <b>Start</b>
+        <div class="lbl">Time per session</div>
+        <div class="row"><span class="btn">5 minutes</span><span class="btn" style="border-color:var(--accent);background:var(--accent-soft)">10 minutes</span><span class="btn">20 minutes or more</span></div>
+        <div class="lbl">Learning style</div>
+        <div class="row"><span class="btn" style="border-color:var(--accent);background:var(--accent-soft)">Listen and watch</span><span class="btn">Read at my own pace</span></div>
+        <div style="margin-top:12px"><span class="btn primary">Make my plan</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="step">
+    <div>
+      <div class="num">STEP 3</div>
+      <h2>Take a short lesson</h2>
+      <p>Each lesson is a few slides with Sam, your virtual tutor, and lasts about 2 minutes.</p>
+      <ul>
+        <li>Use <b>◀ Back</b> and <b>Next ▶</b> to move between slides.</li>
+        <li>Captions show Sam's words, so you can follow without sound.</li>
+        <li>Click <b>Explain more simply</b> for a plain-English summary.</li>
+        <li>Already know it? Click <b>I know this: skip to the check</b>.</li>
+      </ul>
+      <div class="tip">No sound? Check your volume, or choose a different voice from the voice menu. You can also switch to Read mode at any time.</div>
+    </div>
+    <div class="shot" aria-hidden="true">
+      <div class="bar3"><i></i><i></i><i></i></div>
+      <div class="mono" style="margin-bottom:6px">Lesson 1 of 9 · about 2 minutes</div>
+      <div class="slide"><div><b>The 27-Hour Problem</b><div style="font-family:var(--f-mono);font-size:1.6rem;color:var(--bad);font-weight:600">26.7</div><div style="font-size:.75rem;color:var(--muted)">hours per day</div></div></div>
+      <div class="cap"><div class="sam">S</div><span>"Welcome to Chapter 1. I'm Sam, your tutor…"</span></div>
+      <div class="row" style="margin-top:8px;justify-content:space-between"><span class="btn">◀ Back</span><span class="btn">Explain more simply</span><span class="btn primary">Next ▶</span></div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="step">
+    <div>
+      <div class="num">STEP 4</div>
+      <h2>Answer the quick check</h2>
+      <ol>
+        <li>Before answering, say whether you are <b>sure</b> or <b>not sure</b>. This is optional. It feeds your self-awareness score.</li>
+        <li>Pick an answer. You see straight away whether it is right, with a short explanation.</li>
+        <li>Wrong first time? You get a <b>second chance</b>: a different question on the same idea.</li>
+      </ol>
+      <div class="tip">Missed both? The lesson is marked for review. Try it again in Read mode. Practising again is not scored.</div>
+    </div>
+    <div class="shot" aria-hidden="true">
+      <div class="bar3"><i></i><i></i><i></i></div>
+      <div class="card">
+        <b>Quick check</b>
+        <div class="lbl">Before you answer, how sure are you?</div>
+        <div class="row"><span class="btn" style="border-color:var(--accent);background:var(--accent-soft)">I'm sure</span><span class="btn">I'm not sure</span></div>
+        <p style="margin-top:10px;font-weight:600;font-size:.85rem">How long would full guideline care take each day?</p>
+        <div class="opt">About 12 hours</div>
+        <div class="opt ok">About 26.7 hours ✓</div>
+        <div class="opt">About 24 hours</div>
+        <div class="row" style="margin-top:8px"><span class="pill good">Right first time</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="step">
+    <div>
+      <div class="num">STEP 5</div>
+      <h2>Work through the clinical case</h2>
+      <p>Each lesson ends with a short real-world situation, such as a practice meeting or a patient in clinic. You choose what to do at each step.</p>
+      <ul>
+        <li><span class="pill good">Good call</span> earns 2 points.</li>
+        <li><span class="pill warn">Partly</span> earns 1 point.</li>
+        <li><span class="pill bad">Not the best choice</span> earns 0 points.</li>
+      </ul>
+      <p style="margin-top:8px">Read the feedback after each choice. It explains the reasoning, which is the real learning. You can retry the case.</p>
+    </div>
+    <div class="shot" aria-hidden="true">
+      <div class="bar3"><i></i><i></i><i></i></div>
+      <div class="card">
+        <div class="mono">Case simulation</div>
+        <b>The practice meeting</b>
+        <p style="color:var(--muted);font-size:.8rem;margin-top:4px">A partner says the doctors simply need to work harder to meet every guideline target.</p>
+        <p style="margin-top:8px;font-weight:600;font-size:.85rem">1. What do you say?</p>
+        <div class="opt sel">The work needs about 27 hours a day, so harder work cannot close the gap</div>
+        <div class="opt">Agree, and propose a longer working day</div>
+        <div class="opt">Suggest hiring one more GP</div>
+        <div style="margin-top:8px;font-size:.8rem;background:var(--good-soft);border-radius:6px;padding:6px 8px"><b>Good call.</b> The task is impossible for one person, so the system must change.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="step">
+    <div>
+      <div class="num">STEP 6</div>
+      <h2>Take the final case test</h2>
+      <p>When you have finished all the lessons, take the final test: 12 to 14 questions covering the whole chapter. Each question tells you which lesson it comes from.</p>
+      <p style="margin-top:8px">Afterwards you get a <b>personal learning path</b>. It tells you which lessons to revisit and why, for example "you missed the quick check" or "2 final-test questions wrong".</p>
+      <div class="tip">You can take the test early, but you will usually score higher after finishing the lessons. You can retake it, and your last attempt is kept.</div>
+    </div>
+    <div class="shot" aria-hidden="true">
+      <div class="bar3"><i></i><i></i><i></i></div>
+      <div class="card">
+        <div class="mono">Question 2 of 12 · from lesson 2: Three tiers of care</div>
+        <p style="margin-top:6px;font-weight:600;font-size:.85rem">A GP practice is drowning in messages and note-writing. Which AI job fits this tier best?</p>
+        <div class="opt">Genomic pattern-finding</div>
+        <div class="opt sel">A scribe and inbox sorting</div>
+        <div class="opt">Emergency scan triage</div>
+        <div style="margin-top:10px"><span class="btn primary">Next question</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="step">
+    <div>
+      <div class="num">STEP 7</div>
+      <h2>Read your learning index and get your certificate</h2>
+      <p>Your <b>learning index</b> (0 to 100) combines four things:</p>
+      <ul>
+        <li><b>Knowledge</b> (35%): quick checks right first time, plus final-test answers</li>
+        <li><b>Applying it</b> (35%): points from the clinical cases</li>
+        <li><b>Self-awareness</b> (15%): how often your "sure" or "not sure" matched your answer</li>
+        <li><b>Completion</b> (15%): lessons finished and final test taken</li>
+      </ul>
+      <p style="margin-top:8px">Once you have taken the final test and reached <b>Competent (60 or more)</b>, type your name and click <b>Download certificate</b>. It saves as a picture.</p>
+    </div>
+    <div class="shot" aria-hidden="true">
+      <div class="bar3"><i></i><i></i><i></i></div>
+      <div class="card">
+        <div class="row" style="gap:14px"><div class="big">68</div><div><b>Competent</b><div style="font-size:.75rem;color:var(--muted)">Applies the ideas to new cases</div></div></div>
+        <div class="ladder"><div>Novice<br>0–39</div><div>Advanced beginner<br>40–59</div><div class="on">Competent<br>60–79</div><div>Proficient<br>80+</div></div>
+        <div class="meter" style="margin-top:10px">
+          <span>Knowledge</span><div class="m"><i style="width:72%"></i></div><span>72%</span>
+          <span>Applying it</span><div class="m"><i style="width:65%"></i></div><span>65%</span>
+          <span>Self-awareness</span><div class="m"><i style="width:60%"></i></div><span>60%</span>
+          <span>Completion</span><div class="m"><i style="width:100%"></i></div><span>100%</span>
+        </div>
+      </div>
+      <div class="cert" style="margin-top:10px">
+        <div class="mono" style="color:var(--signal)">CERTIFICATE OF LEARNING</div>
+        <div class="t">Dr A. Example</div>
+        <div style="font-size:.75rem;color:var(--muted)">has completed Chapter 1 · Learning index 68 / 100</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Good to know -->
+  <section>
+    <h2 style="font-size:1.4rem;margin-bottom:10px">Good to know</h2>
+    <div class="facts">
+      <div><b>Your progress stays on your device</b><span>It is saved in this browser only, and nothing is sent anywhere. Use the same browser and device to keep your record.</span></div>
+      <div><b>Keep your certificate</b><span>Download it after each chapter. It is your proof of learning if you change device or clear your browser.</span></div>
+      <div><b>Stop and come back any time</b><span>Close the page whenever you like. The chapter remembers where you got to.</span></div>
+      <div><b>Works on phone, tablet and computer</b><span>On a phone, headphones help in Listen mode. Read mode works anywhere.</span></div>
+      <div><b>Start again</b><span>Each chapter has a "Start this chapter again" option on its progress page. It clears that chapter only.</span></div>
+      <div><b>Private browsing</b><span>Avoid private or incognito windows. They forget your progress when you close them.</span></div>
+    </div>
+  </section>
+
+  <p class="foot"><a href="index.html">◀ Back to the course</a> · <a class="print" href="javascript:window.print()">Print this guide</a></p>
+</div>
+</body>
+</html>
