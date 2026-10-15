@@ -54,16 +54,28 @@ a.ch:hover{border-color:var(--accent)}
 .how span{font-size:.88rem;color:var(--muted)}
 .foot{font-size:.8rem;color:var(--muted);max-width:80ch}
 a{color:var(--accent)}
+.hero{border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#061B1E 0%,#0B4A48 65%,#0E6B66 140%);color:#E3F2F1;padding:24px 20px;display:grid;gap:20px;align-items:center}
+@media (min-width:860px){.hero{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);padding:28px}}
+.hero .eyebrow{color:#F2C46B} .hero h1{color:#fff} .hero .lede{color:#BFDCDA}
+.hero .cover{float:left;width:110px;max-width:30vw;border-radius:6px;margin:0 16px 8px 0;box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.stage{position:relative;aspect-ratio:16/9;width:100%;background:#0A1820;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+.stage canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
+.scene-title{position:absolute;left:12px;bottom:10px;right:12px;color:#E6F1FF;font-size:.86rem;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none}
+.scene-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#cfe3ff;font-size:1.1rem;text-align:center;padding:20px}
 </style>
 </head>
 <body>
 
 <div class="wrap">
-  <header>
+  <header class="hero">
+    <div class="txt">
+    <img class="cover" src="assets/cover.png" alt="Cover of A Clinical Guide to AI in Healthcare" onerror="this.remove()">
     <div class="eyebrow">Online course for clinicians</div>
     <h1 style="font-size:2.3rem;margin-top:4px">A Clinical Guide to AI in Healthcare</h1>
-    <p class="lede">Short lessons narrated by Sam, your virtual tutor, with a case to try after each one. Every chapter sets a plan that fits your time and pace, and keeps a learning index so you can see where you are.</p>
+    <p class="lede">Short lessons narrated by Sam, your virtual tutor, with live 3D animations and soft background music, then a clinical case and a game or puzzle after each one. Every chapter sets a plan that fits your time and pace, and keeps a learning index so you can see where you are.</p>
     <p style="margin-top:12px"><a href="guide.html" style="display:inline-flex;gap:6px;align-items:center;font-weight:600;text-decoration:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:99px;padding:6px 14px">New here? Read the quick guide ▶</a></p>
+    </div>
+    <div class="stage herostage" id="heroStage" role="img" aria-label="Animated 3D map of the course"></div>
   </header>
   <section class="summary" aria-label="Your course progress">
     <div><div class="big" id="ovIdx">—</div><small style="color:var(--muted)">course learning index</small></div>
@@ -71,8 +83,8 @@ a{color:var(--accent)}
   </section>
   <section class="how" aria-label="How each chapter works">
     <div><b>1. Start</b><span>Three quick questions and your available time set your path and pace.</span></div>
-    <div><b>2. Short lessons</b><span>About two minutes each. Listen to Sam, or read at your own speed.</span></div>
-    <div><b>3. Check and case</b><span>A quick check, a second chance if needed, then a clinical case to decide.</span></div>
+    <div><b>2. Watch</b><span>About two minutes each. Sam narrates while a live 3D scene shows the idea, with soft music. Or read at your own speed.</span></div>
+    <div><b>3. Check, case and game</b><span>A quick check, a clinical case to decide, then a drag-and-drop puzzle, matching, memory or speed game.</span></div>
     <div><b>4. Final test and index</b><span>Your learning index shows knowledge, applying it, self-awareness and completion.</span></div>
   </section>
   <section><h2 style="font-size:1.4rem;margin-bottom:10px">Chapters</h2><div class="grid" id="grid"></div></section>
@@ -105,5 +117,23 @@ if (started){ const avg = Math.round(sum/started); document.getElementById('ovId
 document.getElementById('ovStarted').textContent = started; document.getElementById('ovTests').textContent = tests; document.getElementById('ovLessons').textContent = lessons;
 </script>
 
+<script src="assets/three.min.js"></script>
+<script src="assets/scenes.js"></script>
+<script>
+/* Home banner: a live 3D map of the course. */
+(function(){ const st = document.getElementById('heroStage'); if (!st || !window.Scenes) return;
+  const sc = Scenes.mount(st, {type:'graph', title:'Six units, one goal: safe, useful AI at the bedside', orbit:0.4, cam:[0,3.6,10.5],
+    nodes:[{id:'you',label:'You, the\nclinician',p:[0,0.3,1.0],c:'cyan',shape:'ico',size:1.25,spin:true,ls:0.9},
+      {id:'a',label:'A. AI basics',p:[-4.6,1.4,-0.6],c:'slate',shape:'box',size:0.85,ls:0.85},
+      {id:'c1',label:'1. The case\nfor AI',p:[-3.0,3.1,-1.8],c:'amber',shape:'cyl',size:0.85,ls:0.85},
+      {id:'c2',label:'2. Kinds of\nclinical AI',p:[0,3.5,-2.2],c:'violet',shape:'sphere',size:0.85,ls:0.85},
+      {id:'c3',label:'3. Data and\nevidence',p:[3.0,3.1,-1.8],c:'green',shape:'box',size:0.85,ls:0.85},
+      {id:'c4',label:'4. Building\na system',p:[4.6,1.4,-0.6],c:'pink',shape:'torus',size:0.85,ls:0.85},
+      {id:'c5',label:'5. Trust and\nsecurity',p:[2.6,-0.4,0.9],c:'red',shape:'shield',size:0.85,ls:0.85}],
+    links:[['you','a'],['you','c1'],['you','c2'],['you','c3'],['you','c4'],['you','c5']],
+    steps:['all',['you','a'],['you','c1'],['you','c2'],['you','c3'],['you','c4'],['you','c5']]});
+  sc.auto(true);
+})();
+</script>
 </body>
 </html>
